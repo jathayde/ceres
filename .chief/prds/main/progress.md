@@ -17,6 +17,7 @@
 - Use `references_urls` not `references` as column name to avoid Rails method conflict
 - Optional belongs_to: `belongs_to :assoc, optional: true` with `null: true` in migration
 - Unique has_one: `index: { unique: true }` on references in migration + `validates :foreign_key_id, uniqueness: true` in model
+- Viability fallback chain: `plant.expected_viability_years || plant.plant_category.expected_viability_years`
 
 ---
 
@@ -160,4 +161,23 @@
   - For has_one with unique constraint: use `index: { unique: true }` on references in migration + `validates :plant_id, uniqueness: true` in model
   - GrowingGuide is a 1:1 with Plant — mostly nullable text/integer fields, no default scope needed
   - US-021 will use ai_generated/ai_generated_at fields for AI growing guide research feature
+---
+
+## 2026-02-16 - US-009
+- Implemented seed viability calculation logic on SeedPurchase model
+- Added `viability_status` method returning :viable, :test, :expired, :used_up, or :unknown
+- Added `viability_years_remaining` method returning positive/zero/negative integer or nil
+- Added `seed_age` method computing current year minus year_purchased
+- Viability uses plant-level `expected_viability_years`, falling back to category-level
+- Viable: age <= expected_years; Test: age > expected_years AND age <= expected_years + 2; Expired: age > expected_years + 2
+- Used-up purchases return :used_up; missing viability data returns :unknown / nil
+- Files changed:
+  - `app/models/seed_purchase.rb` (updated — added viability methods)
+  - `spec/models/seed_purchase_spec.rb` (updated — added 17 viability specs)
+- **Learnings for future iterations:**
+  - Viability is computed dynamically (not stored) — `seed_age` is `Date.current.year - year_purchased`
+  - Plant-level `expected_viability_years` takes priority over category-level (fallback chain)
+  - The `:unknown` status handles cases where no viability data exists at either level
+  - `viability_years_remaining` can be negative (useful for sorting by urgency in US-024 viability dashboard)
+  - No migration needed — this story is pure business logic on existing columns
 ---
