@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_234018) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_234254) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,6 +48,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_234018) do
     t.index ["name"], name: "index_plant_types_on_name", unique: true
   end
 
+  create_table "plants", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "days_to_harvest_max"
+    t.integer "days_to_harvest_min"
+    t.integer "expected_viability_years"
+    t.boolean "heirloom", default: false, null: false
+    t.string "latin_name"
+    t.integer "life_cycle", null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.bigint "plant_category_id", null: false
+    t.bigint "plant_subcategory_id"
+    t.string "planting_seasons", default: [], array: true
+    t.text "references_urls", default: [], array: true
+    t.datetime "updated_at", null: false
+    t.integer "winter_hardy"
+    t.index ["plant_category_id"], name: "index_plants_on_plant_category_id"
+    t.index ["plant_subcategory_id"], name: "index_plants_on_plant_subcategory_id"
+  end
+
   add_foreign_key "plant_categories", "plant_types"
   add_foreign_key "plant_subcategories", "plant_categories"
+  add_foreign_key "plants", "plant_categories"
+  add_foreign_key "plants", "plant_subcategories"
 end

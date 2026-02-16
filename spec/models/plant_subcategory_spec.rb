@@ -3,6 +3,7 @@ require "rails_helper"
 RSpec.describe PlantSubcategory, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:plant_category) }
+    it { is_expected.to have_many(:plants).dependent(:destroy) }
   end
 
   describe "validations" do
