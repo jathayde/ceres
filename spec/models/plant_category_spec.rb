@@ -1,0 +1,58 @@
+require "rails_helper"
+
+RSpec.describe PlantCategory, type: :model do
+  describe "associations" do
+    it { is_expected.to belong_to(:plant_type) }
+  end
+
+  describe "validations" do
+    subject { build(:plant_category) }
+
+    it { is_expected.to validate_presence_of(:name) }
+    it { is_expected.to validate_uniqueness_of(:name).scoped_to(:plant_type_id) }
+  end
+
+  describe "default scope" do
+    it "orders by position" do
+      plant_type = create(:plant_type)
+      third = create(:plant_category, plant_type: plant_type, position: 3)
+      first = create(:plant_category, plant_type: plant_type, position: 1)
+      second = create(:plant_category, plant_type: plant_type, position: 2)
+
+      expect(PlantCategory.where(plant_type: plant_type).to_a).to eq([ first, second, third ])
+    end
+  end
+
+  describe "scoped uniqueness" do
+    it "allows the same name in different plant types" do
+      type_a = create(:plant_type, name: "Type A")
+      type_b = create(:plant_type, name: "Type B")
+
+      create(:plant_category, plant_type: type_a, name: "Bean")
+      category_b = build(:plant_category, plant_type: type_b, name: "Bean")
+
+      expect(category_b).to be_valid
+    end
+
+    it "rejects duplicate names within the same plant type" do
+      plant_type = create(:plant_type)
+      create(:plant_category, plant_type: plant_type, name: "Bean")
+      duplicate = build(:plant_category, plant_type: plant_type, name: "Bean")
+
+      expect(duplicate).not_to be_valid
+    end
+  end
+
+  describe "factory" do
+    it "creates a valid plant category" do
+      plant_category = build(:plant_category)
+      expect(plant_category).to be_valid
+    end
+
+    it "creates unique names with sequences" do
+      pc1 = create(:plant_category)
+      pc2 = create(:plant_category)
+      expect(pc1.name).not_to eq(pc2.name)
+    end
+  end
+end

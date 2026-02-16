@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe PlantType, type: :model do
+  describe "associations" do
+    it { is_expected.to have_many(:plant_categories).dependent(:destroy) }
+  end
+
   describe "validations" do
     subject { build(:plant_type) }
 
@@ -14,7 +18,7 @@ RSpec.describe PlantType, type: :model do
       first = PlantType.create!(name: "First", position: 1)
       second = PlantType.create!(name: "Second", position: 2)
 
-      expect(PlantType.all.to_a).to eq([first, second, third])
+      expect(PlantType.all.to_a).to eq([ first, second, third ])
     end
   end
 
