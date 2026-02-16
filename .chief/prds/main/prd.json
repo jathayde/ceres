@@ -22,7 +22,7 @@
         "Anthropic Ruby SDK gem (anthropic) added to Gemfile"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-002",
@@ -37,7 +37,8 @@
         "Model tests pass"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-003",
