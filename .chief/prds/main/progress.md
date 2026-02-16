@@ -181,3 +181,21 @@
   - `viability_years_remaining` can be negative (useful for sorting by urgency in US-024 viability dashboard)
   - No migration needed — this story is pure business logic on existing columns
 ---
+
+## 2026-02-16 - US-010
+- Populated `expected_viability_years` on PlantCategory records via seed data
+- Added 36 PlantCategory records across all 5 PlantTypes with viability years and latin genus/species
+- Vegetable categories (21): Onion(2), Leek(2), Chive(2), Parsnip(2), Salsify(2), Pepper(3), Corn(3), Bean(4), Pea(4), Carrot(4), Celery(4), Lettuce(5), Endive(5), Brassica(5), Beet(5), Chard(5), Tomato(5), Eggplant(5), Cucurbit(6), Radish(5), Turnip(5)
+- Grain categories (4): Wheat(4), Oat(3), Rye(3), Barley(3)
+- Herb categories (4): Basil(5), Cilantro(3), Dill(5), Parsley(3)
+- Flower categories (4): Sunflower(5), Zinnia(5), Marigold(3), Cosmos(4)
+- Cover Crop categories (3): Clover(3), Vetch(3), Buckwheat(3)
+- Seed task is idempotent using `find_or_create_by!`
+- Files changed:
+  - `db/seeds.rb` (updated — added PlantCategory seed data)
+- **Learnings for future iterations:**
+  - `find_or_create_by!` with a block is the idempotent seed pattern — block only runs on create, not on find
+  - PlantCategory seed data covers all required viability values from the PRD acceptance criteria
+  - Categories span all PlantTypes, not just Vegetable — Grain, Herb, Flower, Cover Crop all have entries
+  - No migration needed — categories are runtime data, not schema changes
+---
