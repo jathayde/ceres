@@ -51,3 +51,23 @@
   - Follow existing pattern: model validations + default_scope, shoulda-matchers for spec, factory with sequences
   - Always add association spec to both sides (belongs_to and has_many)
 ---
+
+## 2026-02-16 - US-004
+- Created PlantSubcategory model with: plant_category_id (FK, not null), name (string, not null), description, position
+- Added composite unique index on [plant_category_id, name]
+- Model validates name presence and uniqueness scoped to plant_category_id
+- Default scope orders by position
+- Added `has_many :plant_subcategories, dependent: :destroy` to PlantCategory
+- Created factory and comprehensive model specs (associations, validations, scoped uniqueness, default scope, factory)
+- Files changed:
+  - `db/migrate/20260216234018_create_plant_subcategories.rb` (new)
+  - `app/models/plant_subcategory.rb` (new)
+  - `app/models/plant_category.rb` (updated — added has_many association)
+  - `spec/models/plant_subcategory_spec.rb` (new)
+  - `spec/models/plant_category_spec.rb` (updated — added association test)
+  - `spec/factories/plant_subcategories.rb` (new)
+  - `db/schema.rb` (auto-updated by migration)
+- **Learnings for future iterations:**
+  - Pattern is well-established: migration with null/unique constraints, model with belongs_to/validations/default_scope, factory with sequences, spec mirroring parent model spec structure
+  - Each new taxonomy model follows the same template — future models (Plant, etc.) will differ more
+---
