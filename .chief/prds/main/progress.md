@@ -12,6 +12,10 @@
 - Rubocop requires spaces inside array brackets: `[ :a, :b ]` not `[:a, :b]`
 - Use `default_scope { order(:position) }` for position-ordered models
 - Uniqueness scoped validations: `validates :name, uniqueness: { scope: :parent_id }`
+- PostgreSQL array columns: `t.string :field, array: true, default: []`
+- Enums: integer column in migration, `enum :field, { key: 0, key2: 1 }` in model
+- Use `references_urls` not `references` as column name to avoid Rails method conflict
+- Optional belongs_to: `belongs_to :assoc, optional: true` with `null: true` in migration
 
 ---
 
@@ -70,4 +74,45 @@
 - **Learnings for future iterations:**
   - Pattern is well-established: migration with null/unique constraints, model with belongs_to/validations/default_scope, factory with sequences, spec mirroring parent model spec structure
   - Each new taxonomy model follows the same template — future models (Plant, etc.) will differ more
+---
+
+## 2026-02-16 - US-005
+- Created Plant model with: plant_category_id (FK, not null), plant_subcategory_id (FK, nullable), name (string, not null), latin_name, heirloom (boolean, default false), days_to_harvest_min, days_to_harvest_max, winter_hardy (enum), life_cycle (enum, not null), planting_seasons (string array), expected_viability_years, references_urls (text array), notes
+- Enum definitions: winter_hardy (hardy/semi_hardy/tender), life_cycle (annual/biennial/perennial)
+- belongs_to :plant_category, belongs_to :plant_subcategory (optional)
+- Added `has_many :plants, dependent: :destroy` to both PlantCategory and PlantSubcategory
+- Validates name and life_cycle presence
+- Created factory and comprehensive model specs (associations, validations, enums, optional subcategory, defaults, factory)
+- Files changed:
+  - `db/migrate/20260216234254_create_plants.rb` (new)
+  - `app/models/plant.rb` (new)
+  - `app/models/plant_category.rb` (updated — added has_many :plants)
+  - `app/models/plant_subcategory.rb` (updated — added has_many :plants)
+  - `spec/models/plant_spec.rb` (new)
+  - `spec/models/plant_category_spec.rb` (updated — added association test)
+  - `spec/models/plant_subcategory_spec.rb` (updated — added association test)
+  - `spec/factories/plants.rb` (new)
+  - `db/schema.rb` (auto-updated by migration)
+- **Learnings for future iterations:**
+  - Named the column `references_urls` instead of `references` to avoid conflict with Rails' `references` method
+  - PostgreSQL array columns: use `array: true, default: []` in migration
+  - Enum columns use integer type in migration, `enum :field, { key: value }` in model
+  - `optional: true` on belongs_to for nullable FK associations
+  - Plant model is the first model that diverges from the taxonomy template — has enums, optional association, array columns
+---
+
+## 2026-02-16 - US-006
+- Created SeedSource model with: name (string, unique, not null), url (string), notes (text), timestamps
+- Added unique index on name
+- Model validates name presence and uniqueness
+- Created factory and comprehensive model specs (validations, factory uniqueness)
+- Files changed:
+  - `db/migrate/20260216234556_create_seed_sources.rb` (new)
+  - `app/models/seed_source.rb` (new)
+  - `spec/models/seed_source_spec.rb` (new)
+  - `spec/factories/seed_sources.rb` (new)
+  - `db/schema.rb` (auto-updated by migration)
+- **Learnings for future iterations:**
+  - SeedSource is a simple standalone model — no position ordering, no parent association
+  - Future US-007 (SeedPurchase) will need `has_many :seed_purchases` added to this model
 ---

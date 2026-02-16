@@ -86,7 +86,8 @@
         "Model tests pass"
       ],
       "priority": 5,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-006",
@@ -98,7 +99,8 @@
         "Model tests pass"
       ],
       "priority": 6,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-007",

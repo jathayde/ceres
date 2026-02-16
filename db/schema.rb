@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_234254) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_234556) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -66,6 +66,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_234254) do
     t.integer "winter_hardy"
     t.index ["plant_category_id"], name: "index_plants_on_plant_category_id"
     t.index ["plant_subcategory_id"], name: "index_plants_on_plant_subcategory_id"
+  end
+
+  create_table "seed_sources", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.index ["name"], name: "index_seed_sources_on_name", unique: true
   end
 
   add_foreign_key "plant_categories", "plant_types"
