@@ -4,6 +4,7 @@ RSpec.describe Plant, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:plant_category) }
     it { is_expected.to belong_to(:plant_subcategory).optional }
+    it { is_expected.to have_many(:seed_purchases).dependent(:destroy) }
   end
 
   describe "validations" do

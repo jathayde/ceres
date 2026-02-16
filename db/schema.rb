@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_234556) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_234745) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,6 +68,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_234556) do
     t.index ["plant_subcategory_id"], name: "index_plants_on_plant_subcategory_id"
   end
 
+  create_table "seed_purchases", force: :cascade do |t|
+    t.integer "cost_cents"
+    t.datetime "created_at", null: false
+    t.decimal "germination_rate", precision: 5, scale: 4
+    t.string "lot_number"
+    t.text "notes"
+    t.integer "packet_count", default: 1
+    t.bigint "plant_id", null: false
+    t.string "reorder_url"
+    t.integer "seed_count"
+    t.bigint "seed_source_id", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "used_up", default: false, null: false
+    t.date "used_up_at"
+    t.decimal "weight_oz"
+    t.integer "year_purchased", null: false
+    t.index ["plant_id"], name: "index_seed_purchases_on_plant_id"
+    t.index ["seed_source_id"], name: "index_seed_purchases_on_seed_source_id"
+  end
+
   create_table "seed_sources", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -81,4 +101,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_234556) do
   add_foreign_key "plant_subcategories", "plant_categories"
   add_foreign_key "plants", "plant_categories"
   add_foreign_key "plants", "plant_subcategories"
+  add_foreign_key "seed_purchases", "plants"
+  add_foreign_key "seed_purchases", "seed_sources"
 end
