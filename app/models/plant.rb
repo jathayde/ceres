@@ -2,6 +2,7 @@ class Plant < ApplicationRecord
   belongs_to :plant_category
   belongs_to :plant_subcategory, optional: true
 
+  has_one :growing_guide, dependent: :destroy
   has_many :seed_purchases, dependent: :destroy
 
   enum :winter_hardy, { hardy: 0, semi_hardy: 1, tender: 2 }

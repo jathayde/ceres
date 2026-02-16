@@ -16,6 +16,7 @@
 - Enums: integer column in migration, `enum :field, { key: 0, key2: 1 }` in model
 - Use `references_urls` not `references` as column name to avoid Rails method conflict
 - Optional belongs_to: `belongs_to :assoc, optional: true` with `null: true` in migration
+- Unique has_one: `index: { unique: true }` on references in migration + `validates :foreign_key_id, uniqueness: true` in model
 
 ---
 
@@ -115,4 +116,48 @@
 - **Learnings for future iterations:**
   - SeedSource is a simple standalone model — no position ordering, no parent association
   - Future US-007 (SeedPurchase) will need `has_many :seed_purchases` added to this model
+---
+
+## 2026-02-16 - US-007
+- Created SeedPurchase model with: plant_id (FK, not null), seed_source_id (FK, not null), year_purchased (integer, not null), lot_number, germination_rate (decimal 5,4), weight_oz (decimal), seed_count (integer), packet_count (integer, default 1), cost_cents (integer), used_up (boolean, default false), used_up_at (date), reorder_url, notes
+- belongs_to :plant, belongs_to :seed_source
+- Added `has_many :seed_purchases, dependent: :destroy` to both Plant and SeedSource
+- Validates year_purchased presence, germination_rate between 0 and 1 when present
+- Created factory and comprehensive model specs (associations, validations, germination rate edge cases, defaults, factory)
+- Files changed:
+  - `db/migrate/20260216234745_create_seed_purchases.rb` (new)
+  - `app/models/seed_purchase.rb` (new)
+  - `app/models/plant.rb` (updated — added has_many :seed_purchases)
+  - `app/models/seed_source.rb` (updated — added has_many :seed_purchases)
+  - `spec/models/seed_purchase_spec.rb` (new)
+  - `spec/models/plant_spec.rb` (updated — added association test)
+  - `spec/models/seed_source_spec.rb` (updated — added association test)
+  - `spec/factories/seed_purchases.rb` (new)
+  - `db/schema.rb` (auto-updated by migration)
+- **Learnings for future iterations:**
+  - SeedPurchase has dual belongs_to (plant + seed_source) — both required
+  - Germination rate stored as decimal(5,4) — validates 0..1 range with allow_nil
+  - `cost_cents` uses integer (not decimal) for money — standard pattern
+  - `used_up_at` is a date (not datetime) since precision beyond day isn't needed
+  - US-009 will add viability calculation methods to this model
+---
+
+## 2026-02-16 - US-008
+- Created GrowingGuide model with: plant_id (FK, unique, not null), overview, soil_requirements, sun_exposure (enum), water_needs (enum), spacing_inches, row_spacing_inches, planting_depth_inches (decimal), germination_temp_min_f, germination_temp_max_f, germination_days_min, germination_days_max, growing_tips, harvest_notes, seed_saving_notes, ai_generated (boolean, default false), ai_generated_at (datetime)
+- belongs_to :plant with unique constraint (one guide per plant)
+- Plant has_one :growing_guide, dependent: :destroy
+- Enum definitions: sun_exposure (full_sun/partial_shade/full_shade), water_needs (low/moderate/high)
+- Created factory and comprehensive model specs (association, uniqueness, enums, defaults, factory)
+- Files changed:
+  - `db/migrate/20260216235121_create_growing_guides.rb` (new)
+  - `app/models/growing_guide.rb` (new)
+  - `app/models/plant.rb` (updated — added has_one :growing_guide)
+  - `spec/models/growing_guide_spec.rb` (new)
+  - `spec/models/plant_spec.rb` (updated — added association test)
+  - `spec/factories/growing_guides.rb` (new)
+  - `db/schema.rb` (auto-updated by migration)
+- **Learnings for future iterations:**
+  - For has_one with unique constraint: use `index: { unique: true }` on references in migration + `validates :plant_id, uniqueness: true` in model
+  - GrowingGuide is a 1:1 with Plant — mostly nullable text/integer fields, no default scope needed
+  - US-021 will use ai_generated/ai_generated_at fields for AI growing guide research feature
 ---

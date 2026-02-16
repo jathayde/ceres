@@ -10,9 +10,32 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_234745) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_235121) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "growing_guides", force: :cascade do |t|
+    t.boolean "ai_generated", default: false, null: false
+    t.datetime "ai_generated_at"
+    t.datetime "created_at", null: false
+    t.integer "germination_days_max"
+    t.integer "germination_days_min"
+    t.integer "germination_temp_max_f"
+    t.integer "germination_temp_min_f"
+    t.text "growing_tips"
+    t.text "harvest_notes"
+    t.text "overview"
+    t.bigint "plant_id", null: false
+    t.decimal "planting_depth_inches"
+    t.integer "row_spacing_inches"
+    t.text "seed_saving_notes"
+    t.text "soil_requirements"
+    t.integer "spacing_inches"
+    t.integer "sun_exposure"
+    t.datetime "updated_at", null: false
+    t.integer "water_needs"
+    t.index ["plant_id"], name: "index_growing_guides_on_plant_id", unique: true
+  end
 
   create_table "plant_categories", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -97,6 +120,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_234745) do
     t.index ["name"], name: "index_seed_sources_on_name", unique: true
   end
 
+  add_foreign_key "growing_guides", "plants"
   add_foreign_key "plant_categories", "plant_types"
   add_foreign_key "plant_subcategories", "plant_categories"
   add_foreign_key "plants", "plant_categories"
