@@ -327,4 +327,49 @@ RSpec.describe "Plants", type: :request do
       expect(json).to be_empty
     end
   end
+
+  describe "POST /plants/:id/research_growing_guide" do
+    let!(:plant) { create(:plant, name: "Cherokee Purple", plant_category: plant_category) }
+
+    it "enqueues a GrowingGuideResearchJob" do
+      expect {
+        post research_growing_guide_plant_path(plant)
+      }.to have_enqueued_job(GrowingGuideResearchJob).with(plant.id)
+    end
+
+    it "redirects to the plant show page" do
+      post research_growing_guide_plant_path(plant)
+      expect(response).to redirect_to(plant_path(plant))
+    end
+
+    it "sets a flash notice" do
+      post research_growing_guide_plant_path(plant)
+      expect(flash[:notice]).to include("Growing guide research started")
+    end
+
+    it "preserves back_to param in redirect" do
+      post research_growing_guide_plant_path(plant), params: { back_to: "/inventory/browse?plant_type_id=1" }
+      expect(response).to redirect_to(plant_path(plant, back_to: "/inventory/browse?plant_type_id=1"))
+    end
+  end
+
+  describe "GET /plants/:id (show) with growing guide partial" do
+    let!(:plant) { create(:plant, name: "Test Plant", plant_category: plant_category) }
+
+    it "displays Research Growing Guide button when no guide exists" do
+      get plant_path(plant)
+      expect(response.body).to include("Research Growing Guide")
+    end
+
+    it "displays Re-Research button when guide exists" do
+      create(:growing_guide, plant: plant, overview: "Test", ai_generated: true, ai_generated_at: Time.current)
+      get plant_path(plant)
+      expect(response.body).to include("Re-Research")
+    end
+
+    it "subscribes to Turbo Stream for growing guide updates" do
+      get plant_path(plant)
+      expect(response.body).to include("turbo-cable-stream-source")
+    end
+  end
 end

@@ -347,7 +347,8 @@
         "Graceful error handling if AI service is unavailable"
       ],
       "priority": 21,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-022",

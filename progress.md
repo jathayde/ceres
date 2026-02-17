@@ -27,6 +27,9 @@
 - Plant detail page: `plants#show` with back_to param for preserving inventory browser state
 - Plant names in inventory list link to detail page with `data-turbo-frame: "_top"` to break out of Turbo Frame
 - When adding `show` to a resource that had `except: :show`, custom GET routes like `plants/categories_for_type` must use `collection` block (not standalone routes) to avoid being matched by `:id` param
+- AI background jobs: `GrowingGuideResearchJob` pattern — call API, parse JSON, save to model, broadcast Turbo Stream update
+- Anthropic SDK: `Anthropic::Client.new(api_key:)` → `client.messages.create(model:, max_tokens:, messages:)` → `response.content.first.text`
+- Use `local_assigns.fetch(:key, default)` for optional partial locals; `turbo_stream_from` for Turbo Stream subscriptions
 ---
 
 ## 2026-02-16 - US-002
@@ -282,4 +285,37 @@
   - Collection routes change helper names: `plants_categories_for_type_path` → `categories_for_type_plants_path`
   - Use `data-turbo-frame: "_top"` on links inside Turbo Frames to navigate to a full page (break out of the frame)
   - `back_to` param pattern: pass `request.fullpath` to preserve filters, search, and browse context for back navigation
+---
+
+## 2026-02-16 - US-021
+- Implemented AI Growing Guide Research feature with Anthropic Claude API integration
+- Created `GrowingGuideResearchJob` background job (Solid Queue) that:
+  - Calls Anthropic Claude API (Sonnet 4.5) with structured prompt including plant name, latin name, and category context
+  - Parses JSON response into GrowingGuide schema fields with safe enum handling
+  - Creates/updates GrowingGuide record with `ai_generated: true` and timestamp
+  - Broadcasts Turbo Stream update to replace the growing guide section on the plant detail page
+  - Strips markdown code fences from AI responses
+  - Handles invalid enum values gracefully (sets to nil)
+- Added `research_growing_guide` member route and controller action on PlantsController
+- Extracted growing guide section into `_growing_guide.html.erb` partial (used by both show page and Turbo Stream broadcast)
+- Added "Research Growing Guide" / "Re-Research" button to plant detail page
+- Added Turbo Stream subscription (`turbo_stream_from`) on plant show page for live updates
+- API key configured via `ANTHROPIC_API_KEY` env var or Rails credentials
+- 329 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - app/jobs/growing_guide_research_job.rb (new - background job with AI integration)
+  - app/controllers/plants_controller.rb (added research_growing_guide action)
+  - app/views/plants/_growing_guide.html.erb (new - extracted growing guide partial)
+  - app/views/plants/show.html.erb (replaced inline growing guide with partial + Turbo Stream subscription)
+  - config/routes.rb (added member route for research_growing_guide)
+  - spec/jobs/growing_guide_research_job_spec.rb (new - 13 specs covering AI call, parsing, saving, broadcasting, edge cases)
+  - spec/requests/plants_spec.rb (added 7 specs for research action and growing guide UI)
+- **Learnings for future iterations:**
+  - Anthropic Ruby SDK v1.19: `Anthropic::Client.new(api_key:)`, `client.messages.create(model:, max_tokens:, messages:)`, response has `.content[0].text`
+  - Response content blocks use `Anthropic::Models::TextBlock` (has `.text`), not `ContentBlock` (which is a module)
+  - `button_to` with block: first arg is URL, not name — `button_to(url, options) { content }`
+  - Use `local_assigns.fetch(:key, default)` in partials for optional locals (more reliable than `defined?`)
+  - Turbo Stream subscription signs the stream name, so raw stream name won't appear in HTML — test for `turbo-cable-stream-source` element instead
+  - `GrowingGuide.water_needs` (class method) returns the enum mapping hash — same name as instance method, works fine
+  - `broadcast_replace_to` from jobs renders partial with URL helpers available via ApplicationController context
 ---

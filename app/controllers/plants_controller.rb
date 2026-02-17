@@ -1,5 +1,5 @@
 class PlantsController < ApplicationController
-  before_action :set_plant, only: %i[show edit update destroy]
+  before_action :set_plant, only: %i[show edit update destroy research_growing_guide]
 
   def index
     @plants = Plant.includes(:plant_category, :plant_subcategory, :seed_purchases)
@@ -48,6 +48,12 @@ class PlantsController < ApplicationController
     else
       redirect_to plants_path, alert: "Cannot delete plant with associated seed purchases."
     end
+  end
+
+  def research_growing_guide
+    GrowingGuideResearchJob.perform_later(@plant.id)
+    redirect_to plant_path(@plant, back_to: params[:back_to]),
+      notice: "Growing guide research started. Results will appear shortly."
   end
 
   def categories_for_type

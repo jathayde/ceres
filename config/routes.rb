@@ -16,6 +16,9 @@ Rails.application.routes.draw do
   end
 
   resources :plants do
+    member do
+      post :research_growing_guide
+    end
     collection do
       get :categories_for_type
       get :subcategories_for_category
