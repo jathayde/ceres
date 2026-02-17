@@ -277,7 +277,8 @@
         "Uses Turbo Frames so navigation doesn't cause full page reloads"
       ],
       "priority": 17,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-018",

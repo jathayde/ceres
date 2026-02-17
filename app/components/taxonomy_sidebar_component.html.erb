@@ -1,0 +1,73 @@
+<nav class="w-64 shrink-0" aria-label="Taxonomy navigation">
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Browse by Type</h2>
+    </div>
+    <div class="py-2">
+      <%= link_to "All Plants", helpers.root_path,
+            class: "block px-4 py-2 text-sm font-medium #{@selected_type.nil? ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50'}",
+            data: { turbo_frame: "inventory_content" } %>
+
+      <% @plant_types.each do |plant_type| %>
+        <div data-controller="taxonomy-tree" data-taxonomy-tree-expanded-value="<%= type_expanded?(plant_type) %>">
+          <div class="flex items-center">
+            <% if plant_type.plant_categories.any? %>
+              <button type="button" class="px-2 py-2 text-gray-400 hover:text-gray-600"
+                      data-action="taxonomy-tree#toggle" aria-label="Toggle <%= plant_type.name %>">
+                <svg class="h-3 w-3 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                     style="<%= type_expanded?(plant_type) ? 'transform: rotate(90deg)' : '' %>">
+                  <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            <% else %>
+              <span class="px-2 py-2 w-7"></span>
+            <% end %>
+            <%= link_to plant_type.name, browse_path(plant_type: plant_type),
+                  class: "flex-1 py-2 pr-4 text-sm font-medium #{type_selected?(plant_type) ? 'text-green-700' : 'text-gray-700 hover:text-green-700'}",
+                  data: { turbo_frame: "inventory_content" } %>
+          </div>
+
+          <% if plant_type.plant_categories.any? %>
+            <div data-taxonomy-tree-target="children" class="<%= type_expanded?(plant_type) ? '' : 'hidden' %>">
+              <% plant_type.plant_categories.each do |category| %>
+                <div data-controller="taxonomy-tree" data-taxonomy-tree-expanded-value="<%= category_expanded?(category) %>" class="ml-4">
+                  <div class="flex items-center">
+                    <% if category.plant_subcategories.any? %>
+                      <button type="button" class="px-2 py-1.5 text-gray-400 hover:text-gray-600"
+                              data-action="taxonomy-tree#toggle" aria-label="Toggle <%= category.name %>">
+                        <svg class="h-3 w-3 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                             style="<%= category_expanded?(category) ? 'transform: rotate(90deg)' : '' %>">
+                          <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                    <% else %>
+                      <span class="px-2 py-1.5 w-7"></span>
+                    <% end %>
+                    <%= link_to category.name, browse_path(plant_type: plant_type, plant_category: category),
+                          class: "flex-1 py-1.5 pr-4 text-sm #{category_selected?(category) ? 'text-green-700 font-medium' : 'text-gray-600 hover:text-green-700'}",
+                          data: { turbo_frame: "inventory_content" } %>
+                  </div>
+
+                  <% if category.plant_subcategories.any? %>
+                    <div data-taxonomy-tree-target="children" class="<%= category_expanded?(category) ? '' : 'hidden' %>">
+                      <% category.plant_subcategories.each do |subcategory| %>
+                        <div class="ml-4">
+                          <div class="flex items-center">
+                            <span class="px-2 py-1 w-7"></span>
+                            <%= link_to subcategory.name, browse_path(plant_type: plant_type, plant_category: category, plant_subcategory: subcategory),
+                                  class: "flex-1 py-1 pr-4 text-sm #{subcategory_selected?(subcategory) ? 'text-green-700 font-medium' : 'text-gray-500 hover:text-green-700'}",
+                                  data: { turbo_frame: "inventory_content" } %>
+                          </div>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</nav>

@@ -34,5 +34,7 @@ Rails.application.routes.draw do
   post "seed_sources/inline_create", to: "seed_sources#inline_create"
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
 
-  root "home#index"
+  get "inventory/browse", to: "inventory#browse", as: :inventory_browse
+
+  root "inventory#index"
 end

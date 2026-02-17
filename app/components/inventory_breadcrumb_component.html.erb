@@ -1,0 +1,20 @@
+<nav aria-label="Breadcrumb" class="mb-4">
+  <ol class="flex items-center gap-1.5 text-sm text-gray-500">
+    <% crumbs.each_with_index do |crumb, index| %>
+      <% if index > 0 %>
+        <li aria-hidden="true">
+          <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+          </svg>
+        </li>
+      <% end %>
+      <li>
+        <% if crumb[:path] && index < crumbs.length - 1 %>
+          <%= link_to crumb[:label], crumb[:path], class: "hover:text-green-700", data: { turbo_frame: "inventory_content" } %>
+        <% else %>
+          <span class="font-medium text-gray-900"><%= crumb[:label] %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>

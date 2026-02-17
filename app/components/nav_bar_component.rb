@@ -7,7 +7,7 @@ class NavBarComponent < ViewComponent::Base
 
   def nav_items
     [
-      NavItem.new(label: "Inventory", path: root_path, active: @current_path == root_path),
+      NavItem.new(label: "Inventory", path: root_path, active: @current_path == root_path || @current_path.start_with?(inventory_browse_path)),
       NavItem.new(label: "Seed Sources", path: seed_sources_path, active: @current_path.start_with?(seed_sources_path)),
       NavItem.new(label: "Viability Audit", path: viability_audit_path, active: @current_path.start_with?(viability_audit_path))
     ]
@@ -21,6 +21,10 @@ class NavBarComponent < ViewComponent::Base
 
   def seed_sources_path
     helpers.seed_sources_path
+  end
+
+  def inventory_browse_path
+    helpers.inventory_browse_path
   end
 
   def viability_audit_path

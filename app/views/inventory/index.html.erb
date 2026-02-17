@@ -1,0 +1,12 @@
+<%= render PageHeaderComponent.new(title: "Inventory", subtitle: "Browse and manage your seed collection") %>
+
+<div class="flex gap-6 items-start">
+  <%= render TaxonomySidebarComponent.new(plant_types: @plant_types) %>
+
+  <%= turbo_frame_tag "inventory_content" do %>
+    <div class="flex-1 min-w-0">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">All Plants</h2>
+      <%= render "inventory/plant_list", plants: @plants, hide_category: false %>
+    </div>
+  <% end %>
+</div>

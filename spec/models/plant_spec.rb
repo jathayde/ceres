@@ -58,6 +58,45 @@ RSpec.describe Plant, type: :model do
     end
   end
 
+  describe "#active_purchases" do
+    it "returns purchases that are not used up" do
+      plant = create(:plant)
+      active = create(:seed_purchase, plant: plant, used_up: false)
+      create(:seed_purchase, plant: plant, used_up: true)
+
+      expect(plant.active_purchases).to eq([ active ])
+    end
+  end
+
+  describe "#best_viability_status" do
+    let(:plant_category) { create(:plant_category, expected_viability_years: 5) }
+    let(:plant) { create(:plant, plant_category: plant_category) }
+
+    it "returns nil when there are no active purchases" do
+      expect(plant.best_viability_status).to be_nil
+    end
+
+    it "returns :viable when any active purchase is viable" do
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year)
+      expect(plant.best_viability_status).to eq(:viable)
+    end
+
+    it "returns :test when best status is test" do
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year - 6)
+      expect(plant.best_viability_status).to eq(:test)
+    end
+
+    it "returns :expired when all active purchases are expired" do
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year - 8)
+      expect(plant.best_viability_status).to eq(:expired)
+    end
+
+    it "ignores used_up purchases" do
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year, used_up: true)
+      expect(plant.best_viability_status).to be_nil
+    end
+  end
+
   describe "factory" do
     it "creates a valid plant" do
       plant = build(:plant)

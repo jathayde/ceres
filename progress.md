@@ -17,6 +17,10 @@
 - Inline creation pattern: Stimulus controller + JSON POST endpoint (e.g., `inline_source_controller.js` + `seed_sources/inline_create`)
 - Display fields for user-friendly input (dollars, percentage) synced to hidden fields for actual model values (cents, decimal 0-1) via Stimulus
 - Bulk actions: use HTML `form` attribute on checkboxes to link them to a hidden `form_with`, with Stimulus controller for select-all/toolbar visibility
+- ViewComponents: TaxonomySidebarComponent for hierarchical navigation, InventoryBreadcrumbComponent for breadcrumbs
+- Turbo Frame `inventory_content` wraps the main content area; sidebar links use `data-turbo-frame` to target it
+- Collapsible tree pattern: `taxonomy_tree_controller.js` Stimulus controller with `expanded` value and `children` target
+- Plant model has `active_purchases`, `best_viability_status` methods for inventory display
 ---
 
 ## 2026-02-16 - US-002
@@ -182,4 +186,39 @@
   - `update_all` returns the count of updated rows, useful for building flash messages
   - Stimulus `indeterminate` property on checkbox for partial selection state
   - Bulk actions need CSRF protection which `form_with` handles automatically
+---
+
+## 2026-02-16 - US-017
+- Implemented Inventory Browser with hierarchical sidebar navigation
+- Created InventoryController with `index` (all plants) and `browse` (filtered by type/category/subcategory) actions
+- Created TaxonomySidebarComponent: collapsible tree showing PlantType > PlantCategory > PlantSubcategory hierarchy
+- Created InventoryBreadcrumbComponent: breadcrumb trail showing current position in hierarchy
+- Created taxonomy_tree_controller.js Stimulus controller for expand/collapse tree nodes
+- Plant list shows: variety name, latin name, heirloom badge, best viability status, active purchase count
+- Turbo Frames used for content area so sidebar navigation doesn't cause full page reloads
+- Added `active_purchases` and `best_viability_status` methods to Plant model
+- Updated NavBarComponent to highlight Inventory for browse paths
+- Root path now points to inventory#index (replaces home#index)
+- 248 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - config/routes.rb (added inventory_browse route, changed root to inventory#index)
+  - app/controllers/inventory_controller.rb (new - index + browse actions)
+  - app/models/plant.rb (added active_purchases, best_viability_status methods)
+  - app/components/taxonomy_sidebar_component.rb (new)
+  - app/components/taxonomy_sidebar_component.html.erb (new)
+  - app/components/inventory_breadcrumb_component.rb (new)
+  - app/components/inventory_breadcrumb_component.html.erb (new)
+  - app/components/nav_bar_component.rb (updated active state for browse path)
+  - app/views/inventory/index.html.erb (new - main inventory page with sidebar + plant list)
+  - app/views/inventory/browse.html.erb (new - filtered view with breadcrumbs)
+  - app/views/inventory/_plant_list.html.erb (new - shared plant list partial)
+  - app/javascript/controllers/taxonomy_tree_controller.js (new - collapsible tree Stimulus controller)
+  - spec/requests/inventory_spec.rb (new - 22 specs covering index, browse by type/category/subcategory, plant list content)
+  - spec/models/plant_spec.rb (added 7 specs for active_purchases, best_viability_status)
+- **Learnings for future iterations:**
+  - Turbo Frames with named IDs (e.g., `inventory_content`) let sidebar links target the content area without full page reloads using `data-turbo-frame` attribute
+  - `load_browse_context` pattern: check params from most specific (subcategory) to least specific (type) so parent context is always derived
+  - ViewComponents are ideal for reusable navigation elements (sidebar, breadcrumbs) - encapsulate rendering logic and selection state
+  - `Plant.includes(seed_purchases: :seed_source)` needed to avoid N+1 when computing viability on the plant list
+  - Inventory browser uses a standalone route (`inventory/browse`) rather than nested resources to keep URL params simple
 ---

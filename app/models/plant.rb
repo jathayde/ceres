@@ -16,4 +16,18 @@ class Plant < ApplicationRecord
   def deletable?
     seed_purchases.empty?
   end
+
+  def active_purchases
+    seed_purchases.reject(&:used_up?)
+  end
+
+  def best_viability_status
+    statuses = active_purchases.map(&:viability_status)
+    return nil if statuses.empty?
+    return :viable if statuses.include?(:viable)
+    return :test if statuses.include?(:test)
+    return :expired if statuses.include?(:expired)
+
+    :unknown
+  end
 end
