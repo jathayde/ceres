@@ -18,6 +18,11 @@
 - Optional belongs_to: `belongs_to :assoc, optional: true` with `null: true` in migration
 - Unique has_one: `index: { unique: true }` on references in migration + `validates :foreign_key_id, uniqueness: true` in model
 - Viability fallback chain: `plant.expected_viability_years || plant.plant_category.expected_viability_years`
+- ViewComponent specs: require `spec/support/view_component.rb` which includes `ViewComponent::TestHelpers` and `Capybara::RSpecMatchers` for `type: :component`
+- ViewComponent specs use `render_inline(component)` and Capybara's `page` matchers
+- Capybara gem is required for ViewComponent testing (added to test group)
+- Nav routes: `seed_sources_path`, `viability_audit_path`, root as Inventory
+- Stimulus controllers go in `app/javascript/controllers/` and auto-register via eager loading
 
 ---
 
@@ -198,4 +203,43 @@
   - PlantCategory seed data covers all required viability values from the PRD acceptance criteria
   - Categories span all PlantTypes, not just Vegetable — Grain, Herb, Flower, Cover Crop all have entries
   - No migration needed — categories are runtime data, not schema changes
+---
+
+## 2026-02-16 - US-011
+- Implemented application layout with fixed header navigation
+- Created 3 ViewComponents: NavBarComponent, ViabilityBadgeComponent, PageHeaderComponent
+- NavBarComponent: fixed header with Ceres branding, three nav links (Inventory, Seed Sources, Viability Audit), active state highlighting, responsive mobile hamburger menu
+- ViabilityBadgeComponent: color-coded status badges (green=viable, amber=test, red=expired, gray=used_up/unknown)
+- PageHeaderComponent: reusable page header with title, optional subtitle, and actions slot
+- Added Stimulus `nav-toggle` controller for mobile menu toggle
+- Added routes: `resources :seed_sources, only: [:index]` and `get "viability_audit"`
+- Created placeholder controllers and views for SeedSources and ViabilityAudit
+- Updated application layout with `bg-gray-50` body, fixed nav, and proper main content padding
+- Added Capybara gem for ViewComponent test support
+- Created `spec/support/view_component.rb` with ViewComponent::TestHelpers and Capybara::RSpecMatchers
+- 21 component specs covering nav active states, badge styles, page header slots
+- Files changed:
+  - `Gemfile` / `Gemfile.lock` (updated — added capybara)
+  - `app/components/nav_bar_component.rb` + `.html.erb` (new)
+  - `app/components/viability_badge_component.rb` (new)
+  - `app/components/page_header_component.rb` + `.html.erb` (new)
+  - `app/controllers/seed_sources_controller.rb` (new)
+  - `app/controllers/viability_audit_controller.rb` (new)
+  - `app/javascript/controllers/nav_toggle_controller.js` (new)
+  - `app/views/home/index.html.erb` (updated — uses PageHeaderComponent)
+  - `app/views/layouts/application.html.erb` (updated — NavBarComponent, styling)
+  - `app/views/seed_sources/index.html.erb` (new)
+  - `app/views/viability_audit/index.html.erb` (new)
+  - `config/routes.rb` (updated — seed_sources, viability_audit routes)
+  - `spec/components/nav_bar_component_spec.rb` (new)
+  - `spec/components/viability_badge_component_spec.rb` (new)
+  - `spec/components/page_header_component_spec.rb` (new)
+  - `spec/support/view_component.rb` (new)
+- **Learnings for future iterations:**
+  - ViewComponent `render_inline` requires capybara gem — must be in Gemfile test group
+  - `spec/support/view_component.rb` configures `ViewComponent::TestHelpers` and `Capybara::RSpecMatchers` for `type: :component` specs
+  - ViewComponent `Data.define` is a clean Ruby 3.2+ way to define simple value objects (used for NavItem)
+  - `class_names` helper in ERB handles conditional Tailwind classes cleanly
+  - Stimulus controllers auto-register when placed in `app/javascript/controllers/` — no manual registration needed
+  - Fixed header with `fixed top-0 left-0 right-0 z-50` plus `pt-20` on main content for clearance
 ---

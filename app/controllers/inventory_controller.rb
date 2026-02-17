@@ -1,11 +1,13 @@
 class InventoryController < ApplicationController
   def index
     @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
+    @search_query = params[:q].to_s.strip
     load_plants
   end
 
   def browse
     @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
+    @search_query = params[:q].to_s.strip
     load_browse_context
     load_plants
   end
@@ -26,7 +28,12 @@ class InventoryController < ApplicationController
   end
 
   def load_plants
-    scope = Plant.includes(:plant_category, :plant_subcategory, seed_purchases: :seed_source)
+    if @search_query.present?
+      scope = Plant.search(@search_query)
+        .includes(:plant_category, :plant_subcategory, seed_purchases: :seed_source)
+    else
+      scope = Plant.includes(:plant_category, :plant_subcategory, seed_purchases: :seed_source)
+    end
 
     if @plant_subcategory
       scope = scope.where(plant_subcategory_id: @plant_subcategory.id)
@@ -36,6 +43,10 @@ class InventoryController < ApplicationController
       scope = scope.where(plant_category_id: @plant_type.plant_categories.select(:id))
     end
 
-    @plants = scope.order("plant_categories.name", :name).references(:plant_category)
+    if @search_query.present?
+      @plants = scope.references(:plant_category)
+    else
+      @plants = scope.order("plant_categories.name", :name).references(:plant_category)
+    end
   end
 end

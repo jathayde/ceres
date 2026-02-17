@@ -6,6 +6,7 @@ RSpec.describe Plant, type: :model do
     it { is_expected.to belong_to(:plant_subcategory).optional }
     it { is_expected.to have_one(:growing_guide).dependent(:destroy) }
     it { is_expected.to have_many(:seed_purchases).dependent(:restrict_with_error) }
+    it { is_expected.to have_many(:seed_sources).through(:seed_purchases) }
   end
 
   describe "validations" do
@@ -94,6 +95,55 @@ RSpec.describe Plant, type: :model do
     it "ignores used_up purchases" do
       create(:seed_purchase, plant: plant, year_purchased: Date.current.year, used_up: true)
       expect(plant.best_viability_status).to be_nil
+    end
+  end
+
+  describe ".search" do
+    it "finds plants by name" do
+      tomato = create(:plant, name: "Cherokee Purple")
+      create(:plant, name: "Genovese Basil")
+
+      results = Plant.search("Cherokee")
+      expect(results).to include(tomato)
+      expect(results.size).to eq(1)
+    end
+
+    it "finds plants by latin name" do
+      tomato = create(:plant, name: "Roma", latin_name: "Solanum lycopersicum")
+      create(:plant, name: "Sweet Basil")
+
+      results = Plant.search("Solanum")
+      expect(results).to include(tomato)
+    end
+
+    it "finds plants by notes" do
+      plant = create(:plant, name: "Jalapeno", notes: "Great for salsa and pickling")
+      create(:plant, name: "Bell Pepper")
+
+      results = Plant.search("salsa")
+      expect(results).to include(plant)
+    end
+
+    it "finds plants by seed source name" do
+      source = create(:seed_source, name: "Baker Creek Heirloom")
+      plant = create(:plant, name: "Moon and Stars")
+      create(:seed_purchase, plant: plant, seed_source: source)
+      create(:plant, name: "Sugar Baby")
+
+      results = Plant.search("Baker")
+      expect(results).to include(plant)
+    end
+
+    it "supports prefix matching" do
+      plant = create(:plant, name: "Brandywine")
+      results = Plant.search("Brand")
+      expect(results).to include(plant)
+    end
+
+    it "is case insensitive" do
+      plant = create(:plant, name: "Sun Gold")
+      results = Plant.search("sun gold")
+      expect(results).to include(plant)
     end
   end
 

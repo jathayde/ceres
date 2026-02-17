@@ -21,6 +21,9 @@
 - Turbo Frame `inventory_content` wraps the main content area; sidebar links use `data-turbo-frame` to target it
 - Collapsible tree pattern: `taxonomy_tree_controller.js` Stimulus controller with `expanded` value and `children` target
 - Plant model has `active_purchases`, `best_viability_status` methods for inventory display
+- pg_search: `include PgSearch::Model` + `pg_search_scope` on model, use `associated_against` for searching through associations
+- Search integrates into existing `load_plants` by conditionally applying `.search(query)` before other filters
+- Debounced search form: Stimulus `search_form_controller` with `requestSubmit()` + Turbo Frame targeting
 ---
 
 ## 2026-02-16 - US-002
@@ -221,4 +224,32 @@
   - ViewComponents are ideal for reusable navigation elements (sidebar, breadcrumbs) - encapsulate rendering logic and selection state
   - `Plant.includes(seed_purchases: :seed_source)` needed to avoid N+1 when computing viability on the plant list
   - Inventory browser uses a standalone route (`inventory/browse`) rather than nested resources to keep URL params simple
+---
+
+## 2026-02-16 - US-018
+- Implemented full-text search across plant name, latin name, notes, and seed source name using pg_search gem
+- Added `PgSearch::Model` to Plant model with `pg_search_scope :search` using tsearch with prefix matching and English dictionary
+- Added `has_many :seed_sources, through: :seed_purchases` to enable searching through seed source names
+- Search integrates into existing InventoryController `load_plants` method - applied before taxonomy filters
+- Created `_search_bar.html.erb` partial with search icon, clear button, and debounced input
+- Created `search_form_controller.js` Stimulus controller for debounced search (300ms delay) with `requestSubmit()` for Turbo Frame integration
+- Search bar appears on both index and browse pages, preserving browse context via hidden fields
+- Results show search heading with query text and result count
+- Empty search shows all plants; search works via Turbo Frame without full page reloads
+- 271 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - app/models/plant.rb (added PgSearch::Model, pg_search_scope, has_many :seed_sources through)
+  - app/controllers/inventory_controller.rb (added @search_query, conditional search in load_plants)
+  - app/views/inventory/index.html.erb (added search bar partial render, conditional heading)
+  - app/views/inventory/browse.html.erb (added search bar partial render with browse context, conditional heading)
+  - app/views/inventory/_search_bar.html.erb (new - search form partial with Stimulus controller)
+  - app/javascript/controllers/search_form_controller.js (new - debounced search Stimulus controller)
+  - spec/models/plant_spec.rb (added 7 specs for .search scope + has_many :seed_sources association)
+  - spec/requests/inventory_spec.rb (added 16 specs for search functionality)
+- **Learnings for future iterations:**
+  - pg_search's `associated_against` only goes one level deep; use `has_many :through` to bridge deeper associations
+  - pg_search `search` scope with `prefix: true` handles partial word matching naturally
+  - When pg_search is active, it applies its own ordering (by rank); skip the default `order()` to preserve relevance ranking
+  - Search form with GET method replaces query string; use hidden fields for browse context params (plant_type_id etc.)
+  - `form_with data: { turbo_frame: "inventory_content" }` targets the Turbo Frame for instant results
 ---

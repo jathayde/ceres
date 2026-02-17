@@ -5,7 +5,16 @@
 
   <%= turbo_frame_tag "inventory_content" do %>
     <div class="flex-1 min-w-0">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">All Plants</h2>
+      <%= render "inventory/search_bar", search_query: @search_query, url: root_path %>
+
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">
+        <% if @search_query.present? %>
+          Search results for "<%= @search_query %>"
+          <span class="text-sm font-normal text-gray-500">(<%= @plants.size %> found)</span>
+        <% else %>
+          All Plants
+        <% end %>
+      </h2>
       <%= render "inventory/plant_list", plants: @plants, hide_category: false %>
     </div>
   <% end %>
