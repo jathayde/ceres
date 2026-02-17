@@ -30,6 +30,9 @@
 - AI background jobs: `GrowingGuideResearchJob` pattern — call API, parse JSON, save to model, broadcast Turbo Stream update
 - Anthropic SDK: `Anthropic::Client.new(api_key:)` → `client.messages.create(model:, max_tokens:, messages:)` → `response.content.first.text`
 - Use `local_assigns.fetch(:key, default)` for optional partial locals; `turbo_stream_from` for Turbo Stream subscriptions
+- Viability audit: standalone `ViabilityAuditController` with filters, sorting, bulk actions; uses `filter_params_for_redirect` helper to preserve filter state across actions
+- Stimulus `audit_filters_controller.js` for dropdown/input filters that manipulate URL searchParams and navigate via `window.location.href`
+- Print-friendly styles: use Tailwind `print:hidden` class and `@media print` block in `application.css` for hiding nav, buttons, etc.
 ---
 
 ## 2026-02-16 - US-002
@@ -349,4 +352,39 @@
   - AI-populated boolean flags (e.g., `latin_name_ai_populated`) are a simple pattern for indicating AI-suggested values without adding complexity
   - Multiple Turbo Stream subscriptions can coexist on the same page (e.g., one for growing guide, one for latin name)
   - Conditional callback: `if: -> { latin_name.blank? }` on `after_commit` prevents unnecessary job enqueuing
+---
+
+## 2026-02-17 - US-024
+- Implemented Viability Dashboard / Audit View with full filtering, sorting, bulk actions, and print support
+- Updated `ViabilityAuditController` from empty stub to full-featured controller with:
+  - Summary counts (viable, test, expired) displayed as color-coded cards
+  - Filtering by viability status, plant type, plant category, seed source, and year range
+  - Sorting by urgency (default), plant name, category, source, or year
+  - Quick "Mark Used Up" action on individual purchases (with filter state preservation)
+  - Bulk "Mark as Used Up" action with checkbox selection
+  - Filter state preserved across mark-as-used-up redirects via `filter_params_for_redirect` helper
+- Created comprehensive audit view with:
+  - Color-coded table rows: green (viable), amber (test), red (expired)
+  - "Reviewed" checkboxes for audit session tracking (client-side only)
+  - Print button and print-friendly CSS (hides nav, buttons, checkboxes)
+  - Clear filters button when filters are active
+- Created Stimulus controllers: `audit_filters_controller.js` (dropdown/input filter navigation), `audit_row_controller.js` (reviewed checkbox)
+- Added `@media print` styles to `application.css` for print-friendly output
+- Added routes: `viability_audit_bulk_mark_used_up`, `viability_audit_mark_as_used_up`
+- 414 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - config/routes.rb (added bulk_mark_used_up and mark_as_used_up routes)
+  - app/controllers/viability_audit_controller.rb (full implementation with filters, sorting, actions)
+  - app/views/viability_audit/index.html.erb (comprehensive audit view)
+  - app/javascript/controllers/audit_filters_controller.js (new - filter navigation Stimulus controller)
+  - app/javascript/controllers/audit_row_controller.js (new - reviewed checkbox Stimulus controller)
+  - app/assets/stylesheets/application.css (added print media styles)
+  - spec/requests/viability_audit_spec.rb (new - 39 specs covering display, filters, sorting, actions)
+- **Learnings for future iterations:**
+  - Viability filtering at the purchase level requires in-memory filtering since viability_status is computed, not stored
+  - `helper_method` declaration in controller makes private methods available in views as helpers
+  - `compact_blank` on params hash removes empty string values cleanly for redirect URLs
+  - RuboCop requires spaces inside array brackets (`[ a, b ]` not `[a, b]`) in this project
+  - Print styles: `@media print` block in CSS + Tailwind `print:hidden` class work well together for hiding interactive elements
+  - Standalone routes (not nested resources) work well for dashboard-style pages with their own action methods
 ---

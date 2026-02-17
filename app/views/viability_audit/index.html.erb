@@ -1,1 +1,225 @@
-<%= render PageHeaderComponent.new(title: "Viability Audit", subtitle: "Review seed viability status across your inventory") %>
+<%= render PageHeaderComponent.new(title: "Viability Audit", subtitle: "Review seed viability status across your inventory") do |component| %>
+  <% component.with_actions do %>
+    <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors print:hidden">
+      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5 2.75C5 1.784 5.784 1 6.75 1h6.5c.966 0 1.75.784 1.75 1.75v3.552c.377.06.734.17 1.06.325a3.5 3.5 0 011.19 4.471v3.152c0 .966-.784 1.75-1.75 1.75H15.5v1.25c0 .966-.784 1.75-1.75 1.75h-7.5A1.75 1.75 0 014.5 17.75V16H3.5A1.75 1.75 0 011.75 14.25v-3.152a3.5 3.5 0 011.19-4.471c.325-.155.682-.266 1.06-.325V2.75z" clip-rule="evenodd" />
+      </svg>
+      Print
+    </button>
+  <% end %>
+<% end %>
+
+<%# Summary Cards %>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 print:grid-cols-3">
+  <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+    <div class="text-3xl font-bold text-green-700"><%= @summary[:viable] %></div>
+    <div class="text-sm font-medium text-green-600">Viable</div>
+  </div>
+  <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+    <div class="text-3xl font-bold text-amber-700"><%= @summary[:test] %></div>
+    <div class="text-sm font-medium text-amber-600">Needs Testing</div>
+  </div>
+  <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div class="text-3xl font-bold text-red-700"><%= @summary[:expired] %></div>
+    <div class="text-sm font-medium text-red-600">Expired</div>
+  </div>
+</div>
+
+<%# Filters %>
+<div class="mb-4 print:hidden">
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="text-sm font-medium text-gray-700">Filters:</span>
+
+    <%# Viability status filter buttons %>
+    <% viability_options = [ [ "viable", "Viable", "bg-green-100 text-green-800 border-green-300", "bg-green-600 text-white border-green-600" ],
+                             [ "test", "Needs Testing", "bg-amber-100 text-amber-800 border-amber-300", "bg-amber-500 text-white border-amber-500" ],
+                             [ "expired", "Expired", "bg-red-100 text-red-800 border-red-300", "bg-red-600 text-white border-red-600" ] ] %>
+    <% viability_options.each do |value, label, inactive_classes, active_classes| %>
+      <% is_active = @viability_filter == value %>
+      <%= link_to label,
+            viability_audit_path(request.query_parameters.except("viability").merge(is_active ? {} : { viability: value })),
+            class: "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-colors #{is_active ? active_classes : inactive_classes} hover:opacity-80" %>
+    <% end %>
+
+    <%# Plant Type dropdown %>
+    <div class="relative inline-block" data-controller="audit-filters" data-audit-filters-base-url-value="<%= viability_audit_path %>">
+      <select
+        class="appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 <%= @plant_type_filter.present? ? 'bg-green-600 text-white border-green-600' : 'bg-gray-100 text-gray-700 border-gray-300' %>"
+        data-action="change->audit-filters#selectFilter"
+        data-audit-filters-param-value="plant_type_id"
+        data-audit-filters-clear-value="plant_category_id"
+      >
+        <option value="">Plant Type</option>
+        <% @plant_types.each do |pt| %>
+          <option value="<%= pt.id %>" <%= "selected" if @plant_type_filter == pt.id.to_s %>><%= pt.name %></option>
+        <% end %>
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+        <svg class="h-3 w-3 <%= @plant_type_filter.present? ? 'text-white' : 'text-gray-500' %>" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+
+    <%# Plant Category dropdown %>
+    <div class="relative inline-block" data-controller="audit-filters" data-audit-filters-base-url-value="<%= viability_audit_path %>">
+      <select
+        class="appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 <%= @plant_category_filter.present? ? 'bg-green-600 text-white border-green-600' : 'bg-gray-100 text-gray-700 border-gray-300' %>"
+        data-action="change->audit-filters#selectFilter"
+        data-audit-filters-param-value="plant_category_id"
+      >
+        <option value="">Category</option>
+        <% @plant_categories.each do |pc| %>
+          <option value="<%= pc.id %>" <%= "selected" if @plant_category_filter == pc.id.to_s %>><%= pc.name %></option>
+        <% end %>
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+        <svg class="h-3 w-3 <%= @plant_category_filter.present? ? 'text-white' : 'text-gray-500' %>" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+
+    <%# Seed Source dropdown %>
+    <div class="relative inline-block" data-controller="audit-filters" data-audit-filters-base-url-value="<%= viability_audit_path %>">
+      <select
+        class="appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 <%= @seed_source_filter.present? ? 'bg-green-600 text-white border-green-600' : 'bg-gray-100 text-gray-700 border-gray-300' %>"
+        data-action="change->audit-filters#selectFilter"
+        data-audit-filters-param-value="seed_source_id"
+      >
+        <option value="">Seed Source</option>
+        <% @seed_sources.each do |source| %>
+          <option value="<%= source.id %>" <%= "selected" if @seed_source_filter == source.id.to_s %>><%= source.name %></option>
+        <% end %>
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+        <svg class="h-3 w-3 <%= @seed_source_filter.present? ? 'text-white' : 'text-gray-500' %>" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+
+    <%# Year range %>
+    <div class="inline-flex items-center gap-1">
+      <input type="number" name="year_from" value="<%= @year_from_filter %>" placeholder="From"
+        class="w-20 px-2 py-1.5 rounded-full text-xs font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 <%= @year_from_filter.present? ? 'bg-green-600 text-white border-green-600' : 'bg-gray-100 text-gray-700' %>"
+        data-controller="audit-filters" data-audit-filters-base-url-value="<%= viability_audit_path %>"
+        data-action="change->audit-filters#selectFilter" data-audit-filters-param-value="year_from"
+        form="year-filter-form">
+      <span class="text-xs text-gray-500">-</span>
+      <input type="number" name="year_to" value="<%= @year_to_filter %>" placeholder="To"
+        class="w-20 px-2 py-1.5 rounded-full text-xs font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 <%= @year_to_filter.present? ? 'bg-green-600 text-white border-green-600' : 'bg-gray-100 text-gray-700' %>"
+        data-controller="audit-filters" data-audit-filters-base-url-value="<%= viability_audit_path %>"
+        data-action="change->audit-filters#selectFilter" data-audit-filters-param-value="year_to"
+        form="year-filter-form">
+    </div>
+
+    <%# Clear all filters %>
+    <% if @filters_active %>
+      <%= link_to viability_audit_path,
+            class: "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-colors" do %>
+        <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd" />
+        </svg>
+        Clear filters
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# Sort controls %>
+<div class="flex items-center justify-between mb-4 print:hidden">
+  <div class="text-sm text-gray-500"><%= @purchases.size %> active purchase<%= @purchases.size == 1 ? "" : "s" %></div>
+  <div class="flex items-center gap-2">
+    <span class="text-xs text-gray-500">Sort by:</span>
+    <% sort_options = [["urgency", "Urgency"], ["name", "Plant Name"], ["category", "Category"], ["source", "Source"], ["year", "Year"]] %>
+    <% sort_options.each do |value, label| %>
+      <% is_active = @sort == value %>
+      <%= link_to label,
+            viability_audit_path(request.query_parameters.merge(sort: value)),
+            class: "text-xs font-medium px-2 py-1 rounded #{is_active ? 'bg-gray-200 text-gray-800' : 'text-gray-500 hover:text-gray-700'}" %>
+    <% end %>
+  </div>
+</div>
+
+<%# Purchase Table with bulk actions %>
+<div data-controller="bulk-select" class="space-y-3">
+  <div data-bulk-select-target="toolbar" class="hidden items-center gap-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm print:hidden">
+    <span><strong data-bulk-select-target="count">0</strong> selected</span>
+    <button type="submit" form="audit-bulk-form"
+      class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition-colors"
+      data-turbo-confirm="Mark selected purchases as used up?">Mark Selected as Used Up</button>
+  </div>
+
+  <%= form_with url: viability_audit_bulk_mark_used_up_path(filter_params_for_redirect), method: :patch, id: "audit-bulk-form", class: "hidden" do %><% end %>
+
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left print:hidden">
+            <input type="checkbox" data-bulk-select-target="selectAll" data-action="change->bulk-select#toggleAll"
+              class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plant</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">Reviewed</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <% @purchases.each do |purchase| %>
+          <% status = purchase.viability_status %>
+          <% row_color = case status
+               when :viable then "bg-green-50"
+               when :test then "bg-amber-50"
+               when :expired then "bg-red-50"
+               else ""
+             end %>
+          <tr class="<%= row_color %> hover:opacity-80 print:break-inside-avoid" data-controller="audit-row">
+            <td class="px-4 py-4 print:hidden">
+              <input type="checkbox" name="seed_purchase_ids[]" value="<%= purchase.id %>"
+                data-bulk-select-target="checkbox" data-action="change->bulk-select#updateCount"
+                form="audit-bulk-form"
+                class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+            </td>
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+              <%= link_to purchase.plant.name, plant_path(purchase.plant), class: "hover:text-green-700" %>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= purchase.plant.plant_category.name %></td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= purchase.seed_source.name %></td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= purchase.year_purchased %></td>
+            <td class="px-6 py-4 text-sm"><%= render ViabilityBadgeComponent.new(status: status) %></td>
+            <td class="px-6 py-4 text-sm print:hidden">
+              <input type="checkbox" data-audit-row-target="reviewed"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                aria-label="Mark as reviewed">
+            </td>
+            <td class="px-6 py-4 text-sm print:hidden">
+              <div class="flex items-center justify-end">
+                <%= button_to "Mark Used Up",
+                      viability_audit_mark_as_used_up_path(purchase, **filter_params_for_redirect),
+                      method: :patch,
+                      class: "text-amber-600 hover:text-amber-800 text-sm font-medium" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+        <% if @purchases.empty? %>
+          <tr>
+            <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">
+              <% if @filters_active %>
+                No purchases match the current filters.
+              <% else %>
+                No active seed purchases to audit.
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

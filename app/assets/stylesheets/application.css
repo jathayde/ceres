@@ -8,3 +8,12 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+@media print {
+  header, nav { display: none !important; }
+  main { padding-top: 0 !important; }
+  .print\:hidden { display: none !important; }
+  body { background: white !important; }
+  table { font-size: 11px; }
+  tr { page-break-inside: avoid; }
+}

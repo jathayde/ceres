@@ -42,6 +42,8 @@ Rails.application.routes.draw do
   resources :seed_sources, except: :show
   post "seed_sources/inline_create", to: "seed_sources#inline_create"
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
+  patch "viability_audit/bulk_mark_used_up", to: "viability_audit#bulk_mark_used_up", as: :viability_audit_bulk_mark_used_up
+  patch "viability_audit/mark_as_used_up/:id", to: "viability_audit#mark_as_used_up", as: :viability_audit_mark_as_used_up
 
   get "inventory/browse", to: "inventory#browse", as: :inventory_browse
 

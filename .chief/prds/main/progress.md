@@ -273,3 +273,34 @@
   - Filter state must be propagated in three ways: URL params (links), hidden fields (search form), and Stimulus (select dropdown)
   - Turbo Frame `src` assignment triggers frame navigation without a full page reload
 ---
+
+## 2026-02-17 - US-023
+- Implemented AI Viability Data Enrichment for PlantCategory records
+- Added `expected_viability_years_ai_populated` boolean column to `plant_categories` table
+- Created `ViabilityDataEnrichmentJob` background job that calls Anthropic Claude API to research seed viability years for a given plant category
+- Added `research_viability` member action on `PlantCategoriesController`
+- Added nested member route: `POST /plant_types/:plant_type_id/plant_categories/:id/research_viability`
+- Updated plant categories index view with:
+  - "Research" button (lightbulb icon, indigo color) for categories without viability data
+  - "AI" badge (blue) on categories with AI-populated viability data
+  - Turbo Stream subscriptions for real-time updates when AI job completes
+- Created `_viability_cell.html.erb` partial for Turbo Stream broadcast replacements
+- User can override AI-suggested values at any time via the existing edit form
+- Added 16 job specs and 3 request specs (total 19 new tests, all passing)
+- Files changed:
+  - `db/migrate/20260217012830_add_expected_viability_years_ai_populated_to_plant_categories.rb` (new)
+  - `app/jobs/viability_data_enrichment_job.rb` (new)
+  - `app/controllers/plant_categories_controller.rb` (updated — added research_viability action)
+  - `app/views/plant_categories/index.html.erb` (updated — research button, AI badge, Turbo Stream)
+  - `app/views/plant_categories/_viability_cell.html.erb` (new — partial for viability cell)
+  - `config/routes.rb` (updated — added research_viability member route)
+  - `db/schema.rb` (auto-updated by migration)
+  - `spec/jobs/viability_data_enrichment_job_spec.rb` (new)
+  - `spec/requests/plant_categories_spec.rb` (updated — added 6 new specs)
+- **Learnings for future iterations:**
+  - AI job pattern is well-established: `call_anthropic` → `parse_response` → `save_*` → `broadcast_update`, with `api_key` helper
+  - For nested resource actions (plant_categories nested under plant_types), use `member do ... end` inside the nested block
+  - The `expected_viability_years_ai_populated` boolean follows the same pattern as `latin_name_ai_populated` and `latin_genus_ai_populated`
+  - Turbo Stream broadcast targets must match the DOM element ID exactly for real-time updates
+  - Rubocop can't parse ERB files — only lint `.rb` files
+---
