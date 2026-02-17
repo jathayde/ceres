@@ -109,4 +109,29 @@ RSpec.describe "SeedSources", type: :request do
       expect(flash[:alert]).to be_present
     end
   end
+
+  describe "POST /seed_sources/inline_create" do
+    it "creates a seed source and returns JSON" do
+      expect {
+        post seed_sources_inline_create_path, params: { seed_source: { name: "New Source", url: "https://newsource.com" } }, as: :json
+      }.to change(SeedSource, :count).by(1)
+      expect(response).to have_http_status(:created)
+      json = JSON.parse(response.body)
+      expect(json["name"]).to eq("New Source")
+      expect(json["id"]).to be_present
+    end
+
+    it "returns errors for invalid params" do
+      post seed_sources_inline_create_path, params: { seed_source: { name: "" } }, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      json = JSON.parse(response.body)
+      expect(json["errors"]).to be_present
+    end
+
+    it "returns errors for duplicate name" do
+      create(:seed_source, name: "Existing Source")
+      post seed_sources_inline_create_path, params: { seed_source: { name: "Existing Source" } }, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
 end

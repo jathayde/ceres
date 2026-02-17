@@ -39,6 +39,16 @@ class SeedSourcesController < ApplicationController
     end
   end
 
+  def inline_create
+    @seed_source = SeedSource.new(seed_source_params)
+
+    if @seed_source.save
+      render json: { id: @seed_source.id, name: @seed_source.name }, status: :created
+    else
+      render json: { errors: @seed_source.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def set_seed_source

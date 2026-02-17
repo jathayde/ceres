@@ -14,6 +14,8 @@
 - Cascading dropdowns via Stimulus controller + JSON endpoints (e.g., `categories_for_type`, `subcategories_for_category`)
 - Plant form uses `plant_type_id` as a virtual selector (not persisted on Plant), driving category/subcategory cascades
 - Use `hidden_field_tag` with empty value for array params (like `planting_seasons[]`) so empty arrays submit correctly
+- Inline creation pattern: Stimulus controller + JSON POST endpoint (e.g., `inline_source_controller.js` + `seed_sources/inline_create`)
+- Display fields for user-friendly input (dollars, percentage) synced to hidden fields for actual model values (cents, decimal 0-1) via Stimulus
 ---
 
 ## 2026-02-16 - US-002
@@ -127,4 +129,36 @@
   - `load_form_options` method in controller pre-populates dropdown data for edit forms based on existing associations
   - Array fields like `planting_seasons` need a hidden field with empty value to ensure empty arrays submit correctly
   - Use `references(:plant_category)` with `order("plant_categories.name")` when ordering by an association's column in `includes`
+---
+
+## 2026-02-16 - US-015
+- Implemented full CRUD for Seed Purchases (list, create, edit, delete) as a standalone resource
+- Created SeedPurchasesController with all CRUD actions plus `plants_search` JSON endpoint for plant typeahead
+- Created views: index (table with plant, source, year, viability badge, quantity, cost, actions), _form (plant select, seed source select with inline create, purchase details, quantity & cost), new, edit
+- Created Stimulus `inline_source_controller.js` for:
+  - Inline seed source creation (toggleable form, AJAX POST to `/seed_sources/inline_create`, auto-adds new option to select)
+  - Germination rate display (user enters percentage, hidden field stores decimal 0-1)
+  - Cost display (user enters dollars, hidden field stores cents)
+- Added `inline_create` action to SeedSourcesController returning JSON
+- Added routes: `resources :seed_purchases`, `seed_purchases/plants_search`, `seed_sources/inline_create`
+- Viability badge displayed on each purchase record using existing ViabilityBadgeComponent
+- Used-up purchases shown with dimmed opacity
+- 210 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - config/routes.rb (added seed_purchases routes + JSON endpoints)
+  - app/controllers/seed_purchases_controller.rb (new - full CRUD + plants_search)
+  - app/controllers/seed_sources_controller.rb (added inline_create action)
+  - app/views/seed_purchases/index.html.erb (new)
+  - app/views/seed_purchases/_form.html.erb (new - with inline source creation)
+  - app/views/seed_purchases/new.html.erb (new)
+  - app/views/seed_purchases/edit.html.erb (new)
+  - app/javascript/controllers/inline_source_controller.js (new - inline source + field conversion)
+  - spec/requests/seed_purchases_spec.rb (new - 25 specs covering CRUD + plants_search)
+  - spec/requests/seed_sources_spec.rb (added 3 specs for inline_create)
+- **Learnings for future iterations:**
+  - Cost stored as cents (integer) and germination_rate as decimal 0-1 - use display fields for user-friendly input
+  - Inline creation pattern: Stimulus controller handles AJAX form, adds new option to existing select element
+  - SeedPurchase doesn't need `deletable?` guard - purchases can always be deleted
+  - `plants_search` endpoint supports typeahead by searching with ILIKE
+  - `plant_id` param on new action enables pre-selecting a plant (for linking from plant detail page)
 ---

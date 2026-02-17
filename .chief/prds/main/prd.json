@@ -245,7 +245,8 @@
         "Seed source can be created inline if it doesn't exist yet"
       ],
       "priority": 15,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-016",

@@ -19,7 +19,11 @@ Rails.application.routes.draw do
   get "plants/categories_for_type", to: "plants#categories_for_type"
   get "plants/subcategories_for_category", to: "plants#subcategories_for_category"
 
+  resources :seed_purchases, except: :show
+  get "seed_purchases/plants_search", to: "seed_purchases#plants_search"
+
   resources :seed_sources, except: :show
+  post "seed_sources/inline_create", to: "seed_sources#inline_create"
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
 
   root "home#index"
