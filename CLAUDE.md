@@ -83,3 +83,5 @@ Runs on push to main and PRs: Brakeman, bundler-audit, importmap audit, RuboCop.
 - AI features use encrypted credentials (`config/credentials.yml.enc`) for the Anthropic API key
 - Monetary values stored as integer cents (`cost_cents` column)
 - Enum integers for status fields (`life_cycle`, `winter_hardy`, `mapping_status`, `import status`)
+
+/file:.claude-on-rails/context.md
