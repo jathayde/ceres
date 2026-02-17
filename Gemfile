@@ -52,7 +52,7 @@ gem "view_component"
 gem "anthropic"
 
 # Excel spreadsheet parsing [https://github.com/roo-rb/roo]
-gem "roo", "~> 2.10"
+gem "roo", "~> 3.0"
 gem "csv"
 
 group :development, :test do
