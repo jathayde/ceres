@@ -4,7 +4,7 @@ class PlantSubcategory < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { scope: :plant_category_id }
 
-  default_scope { order(:position) }
+  default_scope { order(:name) }
 
   def deletable?
     plants.empty?

@@ -14,13 +14,13 @@ RSpec.describe PlantSubcategory, type: :model do
   end
 
   describe "default scope" do
-    it "orders by position" do
+    it "orders by name" do
       plant_category = create(:plant_category)
-      third = create(:plant_subcategory, plant_category: plant_category, position: 3)
-      first = create(:plant_subcategory, plant_category: plant_category, position: 1)
-      second = create(:plant_subcategory, plant_category: plant_category, position: 2)
+      cherry = create(:plant_subcategory, plant_category: plant_category, name: "Cherry", position: 3)
+      apple = create(:plant_subcategory, plant_category: plant_category, name: "Apple", position: 1)
+      banana = create(:plant_subcategory, plant_category: plant_category, name: "Banana", position: 2)
 
-      expect(PlantSubcategory.where(plant_category: plant_category).to_a).to eq([ first, second, third ])
+      expect(PlantSubcategory.where(plant_category: plant_category).to_a).to eq([ apple, banana, cherry ])
     end
   end
 

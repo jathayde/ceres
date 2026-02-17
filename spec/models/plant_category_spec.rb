@@ -15,13 +15,13 @@ RSpec.describe PlantCategory, type: :model do
   end
 
   describe "default scope" do
-    it "orders by position" do
+    it "orders by name" do
       plant_type = create(:plant_type)
-      third = create(:plant_category, plant_type: plant_type, position: 3)
-      first = create(:plant_category, plant_type: plant_type, position: 1)
-      second = create(:plant_category, plant_type: plant_type, position: 2)
+      cherry = create(:plant_category, plant_type: plant_type, name: "Cherry", position: 3)
+      apple = create(:plant_category, plant_type: plant_type, name: "Apple", position: 1)
+      banana = create(:plant_category, plant_type: plant_type, name: "Banana", position: 2)
 
-      expect(PlantCategory.where(plant_type: plant_type).to_a).to eq([ first, second, third ])
+      expect(PlantCategory.where(plant_type: plant_type).to_a).to eq([ apple, banana, cherry ])
     end
   end
 
