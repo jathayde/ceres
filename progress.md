@@ -24,6 +24,9 @@
 - pg_search: `include PgSearch::Model` + `pg_search_scope` on model, use `associated_against` for searching through associations
 - Search integrates into existing `load_plants` by conditionally applying `.search(query)` before other filters
 - Debounced search form: Stimulus `search_form_controller` with `requestSubmit()` + Turbo Frame targeting
+- Plant detail page: `plants#show` with back_to param for preserving inventory browser state
+- Plant names in inventory list link to detail page with `data-turbo-frame: "_top"` to break out of Turbo Frame
+- When adding `show` to a resource that had `except: :show`, custom GET routes like `plants/categories_for_type` must use `collection` block (not standalone routes) to avoid being matched by `:id` param
 ---
 
 ## 2026-02-16 - US-002
@@ -252,4 +255,31 @@
   - When pg_search is active, it applies its own ordering (by rank); skip the default `order()` to preserve relevance ranking
   - Search form with GET method replaces query string; use hidden fields for browse context params (plant_type_id etc.)
   - `form_with data: { turbo_frame: "inventory_content" }` targets the Turbo Frame for instant results
+---
+
+## 2026-02-16 - US-020
+- Implemented comprehensive plant detail view (show page)
+- Added `show` action to PlantsController with eager-loaded seed purchases and growing guide
+- Added `show` route to plants resource (previously had `except: :show`)
+- Moved cascading dropdown JSON endpoints into `collection` block in routes to avoid `:id` param conflicts
+- Updated route helper names in `_form.html.erb` and specs to match new collection route convention
+- Plant metadata section: name, latin name, heirloom badge, life cycle, winter hardiness, days to harvest range, planting seasons, expected viability, notes
+- Growing guide section: all GrowingGuide fields displayed when populated, placeholder with AI research suggestion when absent
+- Seed purchases table: sorted by year descending, viability badge, source name (linked to URL), year, lot, quantity, cost, used-up status with toggle actions
+- Quick actions: "Add Purchase" button (links to new seed purchase with plant pre-selected), "Edit Plant" link
+- Back navigation: preserves inventory browser state via `back_to` param; plant list links pass `request.fullpath`
+- Plant names in inventory browser now link to detail page using `data-turbo-frame: "_top"` to break out of Turbo Frame
+- 309 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - config/routes.rb (changed `except: :show` to full resource, moved JSON endpoints to collection block)
+  - app/controllers/plants_controller.rb (added show action, updated before_action)
+  - app/views/plants/show.html.erb (new - comprehensive detail page)
+  - app/views/inventory/_plant_list.html.erb (plant names now link to detail page)
+  - app/views/plants/_form.html.erb (updated route helper names)
+  - spec/requests/plants_spec.rb (added 18 show specs, updated route helper names)
+- **Learnings for future iterations:**
+  - When enabling `:show` on a resource, any standalone GET routes at `resource/path` will be matched as `resource/:id` — move them into `collection` block
+  - Collection routes change helper names: `plants_categories_for_type_path` → `categories_for_type_plants_path`
+  - Use `data-turbo-frame: "_top"` on links inside Turbo Frames to navigate to a full page (break out of the frame)
+  - `back_to` param pattern: pass `request.fullpath` to preserve filters, search, and browse context for back navigation
 ---

@@ -1,0 +1,280 @@
+<% content_for(:title) { "#{@plant.name} — Ceres" } %>
+
+<div class="mb-4">
+  <% back_path = params[:back_to].presence || root_path %>
+  <%= link_to back_path, class: "inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Inventory
+  <% end %>
+</div>
+
+<%= render PageHeaderComponent.new(title: @plant.name, subtitle: @plant.latin_name) do |component| %>
+  <% component.with_actions do %>
+    <%= link_to new_seed_purchase_path(plant_id: @plant.id), class: "inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Add Purchase
+    <% end %>
+    <%= link_to edit_plant_path(@plant), class: "inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      Edit Plant
+    <% end %>
+  <% end %>
+<% end %>
+
+<%# Breadcrumb taxonomy context %>
+<div class="mb-6 text-sm text-gray-500">
+  <%= @plant.plant_category.plant_type.name %>
+  <span class="text-gray-400 mx-1">&rsaquo;</span>
+  <%= @plant.plant_category.name %>
+  <% if @plant.plant_subcategory.present? %>
+    <span class="text-gray-400 mx-1">&rsaquo;</span>
+    <%= @plant.plant_subcategory.name %>
+  <% end %>
+</div>
+
+<%# Plant Metadata Section %>
+<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold text-gray-900 mb-4">Plant Details</h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Life Cycle</dt>
+      <dd class="mt-1 text-sm text-gray-900"><%= @plant.life_cycle.humanize %></dd>
+    </div>
+
+    <% if @plant.heirloom? %>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Heirloom</dt>
+        <dd class="mt-1"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Heirloom</span></dd>
+      </div>
+    <% end %>
+
+    <% if @plant.winter_hardy.present? %>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Winter Hardiness</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @plant.winter_hardy.humanize %></dd>
+      </div>
+    <% end %>
+
+    <% if @plant.days_to_harvest_min.present? || @plant.days_to_harvest_max.present? %>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Days to Harvest</dt>
+        <dd class="mt-1 text-sm text-gray-900">
+          <% if @plant.days_to_harvest_min.present? && @plant.days_to_harvest_max.present? %>
+            <%= @plant.days_to_harvest_min %>&ndash;<%= @plant.days_to_harvest_max %> days
+          <% elsif @plant.days_to_harvest_min.present? %>
+            <%= @plant.days_to_harvest_min %>+ days
+          <% else %>
+            Up to <%= @plant.days_to_harvest_max %> days
+          <% end %>
+        </dd>
+      </div>
+    <% end %>
+
+    <% if @plant.planting_seasons.present? && @plant.planting_seasons.reject(&:blank?).any? %>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Planting Seasons</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @plant.planting_seasons.reject(&:blank?).join(", ") %></dd>
+      </div>
+    <% end %>
+
+    <% if @plant.expected_viability_years.present? %>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Viability</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @plant.expected_viability_years %> years (plant override)</dd>
+      </div>
+    <% elsif @plant.plant_category.expected_viability_years.present? %>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Viability</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @plant.plant_category.expected_viability_years %> years (from category)</dd>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @plant.notes.present? %>
+    <div class="mt-6 pt-4 border-t border-gray-100">
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Notes</dt>
+      <dd class="text-sm text-gray-700 whitespace-pre-wrap"><%= @plant.notes %></dd>
+    </div>
+  <% end %>
+</div>
+
+<%# Growing Guide Section %>
+<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-gray-900">Growing Guide</h2>
+  </div>
+
+  <% if @growing_guide %>
+    <% if @growing_guide.ai_generated? %>
+      <p class="text-xs text-gray-400 mb-4">
+        AI-generated on <%= @growing_guide.ai_generated_at&.strftime("%B %d, %Y") %>
+      </p>
+    <% end %>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+      <% if @growing_guide.sun_exposure.present? %>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Sun Exposure</dt>
+          <dd class="mt-1 text-sm text-gray-900"><%= @growing_guide.sun_exposure.humanize %></dd>
+        </div>
+      <% end %>
+
+      <% if @growing_guide.water_needs.present? %>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Water Needs</dt>
+          <dd class="mt-1 text-sm text-gray-900"><%= @growing_guide.water_needs.humanize %></dd>
+        </div>
+      <% end %>
+
+      <% if @growing_guide.spacing_inches.present? %>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Spacing</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <%= @growing_guide.spacing_inches %>"
+            <% if @growing_guide.row_spacing_inches.present? %>
+              (rows: <%= @growing_guide.row_spacing_inches %>")
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+
+      <% if @growing_guide.planting_depth_inches.present? %>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Planting Depth</dt>
+          <dd class="mt-1 text-sm text-gray-900"><%= @growing_guide.planting_depth_inches %>"</dd>
+        </div>
+      <% end %>
+
+      <% if @growing_guide.germination_temp_min_f.present? || @growing_guide.germination_temp_max_f.present? %>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Germination Temp</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <% if @growing_guide.germination_temp_min_f.present? && @growing_guide.germination_temp_max_f.present? %>
+              <%= @growing_guide.germination_temp_min_f %>&ndash;<%= @growing_guide.germination_temp_max_f %>&deg;F
+            <% elsif @growing_guide.germination_temp_min_f.present? %>
+              &ge; <%= @growing_guide.germination_temp_min_f %>&deg;F
+            <% else %>
+              &le; <%= @growing_guide.germination_temp_max_f %>&deg;F
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+
+      <% if @growing_guide.germination_days_min.present? || @growing_guide.germination_days_max.present? %>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Germination Time</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <% if @growing_guide.germination_days_min.present? && @growing_guide.germination_days_max.present? %>
+              <%= @growing_guide.germination_days_min %>&ndash;<%= @growing_guide.germination_days_max %> days
+            <% elsif @growing_guide.germination_days_min.present? %>
+              <%= @growing_guide.germination_days_min %>+ days
+            <% else %>
+              Up to <%= @growing_guide.germination_days_max %> days
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+    </div>
+
+    <% text_sections = [
+      ["Overview", @growing_guide.overview],
+      ["Soil Requirements", @growing_guide.soil_requirements],
+      ["Growing Tips", @growing_guide.growing_tips],
+      ["Harvest Notes", @growing_guide.harvest_notes],
+      ["Seed Saving Notes", @growing_guide.seed_saving_notes]
+    ] %>
+    <% text_sections.each do |label, content| %>
+      <% if content.present? %>
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"><%= label %></dt>
+          <dd class="text-sm text-gray-700 whitespace-pre-wrap"><%= content %></dd>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="text-center py-8">
+      <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>
+      <p class="mt-2 text-sm text-gray-500">No growing guide yet.</p>
+      <p class="text-xs text-gray-400 mt-1">Use "Research Growing Guide" to auto-populate with AI.</p>
+    </div>
+  <% end %>
+</div>
+
+<%# Seed Purchases Section %>
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-gray-900">Seed Purchases</h2>
+    <%= link_to new_seed_purchase_path(plant_id: @plant.id), class: "inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors" do %>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Add Purchase
+    <% end %>
+  </div>
+
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Viability</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lot</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @seed_purchases.each do |purchase| %>
+        <tr class="hover:bg-gray-50 <%= 'opacity-50' if purchase.used_up? %>">
+          <td class="px-6 py-4 text-sm text-gray-900">
+            <% if purchase.seed_source.url.present? %>
+              <%= link_to purchase.seed_source.name, purchase.seed_source.url, target: "_blank", rel: "noopener noreferrer", class: "text-green-700 hover:text-green-900 underline" %>
+            <% else %>
+              <%= purchase.seed_source.name %>
+            <% end %>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-500"><%= purchase.year_purchased %></td>
+          <td class="px-6 py-4 text-sm"><%= render ViabilityBadgeComponent.new(status: purchase.viability_status) %></td>
+          <td class="px-6 py-4 text-sm text-gray-500"><%= purchase.lot_number %></td>
+          <td class="px-6 py-4 text-sm text-gray-500">
+            <% if purchase.seed_count.present? %>
+              <%= purchase.seed_count %> seeds
+            <% elsif purchase.weight_oz.present? %>
+              <%= purchase.weight_oz %> oz
+            <% end %>
+            <% if purchase.packet_count.present? && purchase.packet_count > 1 %>
+              (<%= purchase.packet_count %> pkts)
+            <% end %>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-500">
+            <% if purchase.cost_cents.present? %>
+              $<%= format("%.2f", purchase.cost_cents / 100.0) %>
+            <% end %>
+          </td>
+          <td class="px-6 py-4 text-sm">
+            <div class="flex items-center justify-end gap-2">
+              <% if purchase.used_up? %>
+                <%= button_to "Mark Active", mark_as_active_seed_purchase_path(purchase), method: :patch,
+                  class: "text-green-600 hover:text-green-800 text-xs" %>
+              <% else %>
+                <%= button_to "Mark Used Up", mark_as_used_up_seed_purchase_path(purchase), method: :patch,
+                  class: "text-amber-600 hover:text-amber-800 text-xs" %>
+              <% end %>
+              <%= link_to "Edit", edit_seed_purchase_path(purchase), class: "text-green-600 hover:text-green-800 text-xs" %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+      <% if @seed_purchases.empty? %>
+        <tr>
+          <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">
+            No seed purchases yet.
+            <%= link_to "Add the first purchase", new_seed_purchase_path(plant_id: @plant.id), class: "text-green-600 hover:text-green-800 underline" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

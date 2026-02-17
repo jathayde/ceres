@@ -1,10 +1,15 @@
 class PlantsController < ApplicationController
-  before_action :set_plant, only: %i[edit update destroy]
+  before_action :set_plant, only: %i[show edit update destroy]
 
   def index
     @plants = Plant.includes(:plant_category, :plant_subcategory, :seed_purchases)
                    .order("plant_categories.name", :name)
                    .references(:plant_category)
+  end
+
+  def show
+    @seed_purchases = @plant.seed_purchases.includes(:seed_source).order(year_purchased: :desc)
+    @growing_guide = @plant.growing_guide
   end
 
   def new

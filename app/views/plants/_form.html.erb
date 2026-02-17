@@ -1,7 +1,7 @@
 <%= form_with(model: plant, class: "space-y-4", data: {
   controller: "cascading-select",
-  cascading_select_categories_url_value: plants_categories_for_type_path,
-  cascading_select_subcategories_url_value: plants_subcategories_for_category_path,
+  cascading_select_categories_url_value: categories_for_type_plants_path,
+  cascading_select_subcategories_url_value: subcategories_for_category_plants_path,
   cascading_select_selected_category_value: plant.plant_category_id,
   cascading_select_selected_subcategory_value: plant.plant_subcategory_id
 }) do |form| %>

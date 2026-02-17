@@ -30,6 +30,142 @@ RSpec.describe "Plants", type: :request do
     end
   end
 
+  describe "GET /plants/:id (show)" do
+    let!(:plant) do
+      create(:plant,
+        name: "Cherokee Purple",
+        plant_category: plant_category,
+        plant_subcategory: plant_subcategory,
+        latin_name: "Solanum lycopersicum",
+        heirloom: true,
+        life_cycle: :annual,
+        winter_hardy: :tender,
+        days_to_harvest_min: 75,
+        days_to_harvest_max: 85,
+        planting_seasons: %w[Spring Summer],
+        notes: "Great heirloom tomato")
+    end
+
+    it "returns a successful response" do
+      get plant_path(plant)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "displays the plant name and latin name" do
+      get plant_path(plant)
+      expect(response.body).to include("Cherokee Purple")
+      expect(response.body).to include("Solanum lycopersicum")
+    end
+
+    it "displays taxonomy breadcrumb" do
+      get plant_path(plant)
+      expect(response.body).to include(plant_type.name)
+      expect(response.body).to include(plant_category.name)
+      expect(response.body).to include(plant_subcategory.name)
+    end
+
+    it "displays plant metadata" do
+      get plant_path(plant)
+      expect(response.body).to include("Annual")
+      expect(response.body).to include("Tender")
+      expect(response.body).to include("75")
+      expect(response.body).to include("85")
+      expect(response.body).to include("Spring")
+      expect(response.body).to include("Summer")
+    end
+
+    it "displays heirloom badge" do
+      get plant_path(plant)
+      expect(response.body).to include("Heirloom")
+    end
+
+    it "displays plant notes" do
+      get plant_path(plant)
+      expect(response.body).to include("Great heirloom tomato")
+    end
+
+    it "displays Edit Plant and Add Purchase links" do
+      get plant_path(plant)
+      expect(response.body).to include("Edit Plant")
+      expect(response.body).to include("Add Purchase")
+    end
+
+    it "displays Back to Inventory link" do
+      get plant_path(plant)
+      expect(response.body).to include("Back to Inventory")
+    end
+
+    context "with seed purchases" do
+      let!(:seed_source) { create(:seed_source, name: "Baker Creek", url: "https://rareseeds.com") }
+      let!(:purchase) { create(:seed_purchase, plant: plant, seed_source: seed_source, year_purchased: 2024, lot_number: "LOT-123", cost_cents: 350, seed_count: 50) }
+
+      it "displays seed purchase details" do
+        get plant_path(plant)
+        expect(response.body).to include("Baker Creek")
+        expect(response.body).to include("2024")
+        expect(response.body).to include("LOT-123")
+        expect(response.body).to include("$3.50")
+        expect(response.body).to include("50 seeds")
+      end
+
+      it "displays seed source as a link when URL present" do
+        get plant_path(plant)
+        expect(response.body).to include("https://rareseeds.com")
+      end
+
+      it "displays viability badge on purchases" do
+        get plant_path(plant)
+        expect(response.body).to include("Viable")
+      end
+    end
+
+    context "with used-up purchase" do
+      let!(:seed_source) { create(:seed_source, name: "Test Source") }
+      let!(:used_purchase) { create(:seed_purchase, plant: plant, seed_source: seed_source, year_purchased: 2020, used_up: true) }
+
+      it "displays used-up purchases with dimmed styling" do
+        get plant_path(plant)
+        expect(response.body).to include("opacity-50")
+      end
+
+      it "shows Mark Active button for used-up purchases" do
+        get plant_path(plant)
+        expect(response.body).to include("Mark Active")
+      end
+    end
+
+    context "without seed purchases" do
+      it "shows empty state message" do
+        get plant_path(plant)
+        expect(response.body).to include("No seed purchases yet")
+      end
+    end
+
+    context "with growing guide" do
+      let!(:growing_guide) { create(:growing_guide, plant: plant, sun_exposure: :full_sun, water_needs: :moderate, spacing_inches: 24, overview: "A classic heirloom tomato") }
+
+      it "displays growing guide details" do
+        get plant_path(plant)
+        expect(response.body).to include("Full sun")
+        expect(response.body).to include("Moderate")
+        expect(response.body).to include("24")
+        expect(response.body).to include("A classic heirloom tomato")
+      end
+    end
+
+    context "without growing guide" do
+      it "shows growing guide placeholder" do
+        get plant_path(plant)
+        expect(response.body).to include("No growing guide yet")
+      end
+    end
+
+    it "preserves back_to parameter in back link" do
+      get plant_path(plant, back_to: "/inventory/browse?plant_type_id=1")
+      expect(response.body).to include("/inventory/browse?plant_type_id=1")
+    end
+  end
+
   describe "GET /plants/new" do
     it "returns a successful response" do
       get new_plant_path
@@ -160,7 +296,7 @@ RSpec.describe "Plants", type: :request do
 
   describe "GET /plants/categories_for_type" do
     it "returns categories for a given plant type as JSON" do
-      get plants_categories_for_type_path, params: { plant_type_id: plant_type.id }
+      get categories_for_type_plants_path, params: { plant_type_id: plant_type.id }
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json.length).to eq(1)
@@ -169,7 +305,7 @@ RSpec.describe "Plants", type: :request do
 
     it "returns empty array for type with no categories" do
       empty_type = create(:plant_type)
-      get plants_categories_for_type_path, params: { plant_type_id: empty_type.id }
+      get categories_for_type_plants_path, params: { plant_type_id: empty_type.id }
       json = JSON.parse(response.body)
       expect(json).to be_empty
     end
@@ -177,7 +313,7 @@ RSpec.describe "Plants", type: :request do
 
   describe "GET /plants/subcategories_for_category" do
     it "returns subcategories for a given category as JSON" do
-      get plants_subcategories_for_category_path, params: { plant_category_id: plant_category.id }
+      get subcategories_for_category_plants_path, params: { plant_category_id: plant_category.id }
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json.length).to eq(1)
@@ -186,7 +322,7 @@ RSpec.describe "Plants", type: :request do
 
     it "returns empty array for category with no subcategories" do
       empty_category = create(:plant_category)
-      get plants_subcategories_for_category_path, params: { plant_category_id: empty_category.id }
+      get subcategories_for_category_plants_path, params: { plant_category_id: empty_category.id }
       json = JSON.parse(response.body)
       expect(json).to be_empty
     end
