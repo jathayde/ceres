@@ -1,8 +1,11 @@
 class PlantType < ApplicationRecord
+  include Sluggable
+
   has_many :plant_categories, dependent: :restrict_with_error
   has_many :plants, through: :plant_categories
 
   validates :name, presence: true, uniqueness: true
+  validates :slug, presence: true, uniqueness: true
 
   default_scope { order(:position) }
 

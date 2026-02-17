@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_143405) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_145905) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -82,8 +82,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_143405) do
     t.string "name", null: false
     t.bigint "plant_type_id", null: false
     t.integer "position"
+    t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.index ["plant_type_id", "name"], name: "index_plant_categories_on_plant_type_id_and_name", unique: true
+    t.index ["plant_type_id", "slug"], name: "index_plant_categories_on_plant_type_id_and_slug", unique: true
     t.index ["plant_type_id"], name: "index_plant_categories_on_plant_type_id"
   end
 
@@ -93,8 +95,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_143405) do
     t.string "name", null: false
     t.bigint "plant_category_id", null: false
     t.integer "position"
+    t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.index ["plant_category_id", "name"], name: "index_plant_subcategories_on_plant_category_id_and_name", unique: true
+    t.index ["plant_category_id", "slug"], name: "index_plant_subcategories_on_plant_category_id_and_slug", unique: true
     t.index ["plant_category_id"], name: "index_plant_subcategories_on_plant_category_id"
   end
 
@@ -103,8 +107,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_143405) do
     t.text "description"
     t.string "name", null: false
     t.integer "position"
+    t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_plant_types_on_name", unique: true
+    t.index ["slug"], name: "index_plant_types_on_slug", unique: true
   end
 
   create_table "plants", force: :cascade do |t|
@@ -122,10 +128,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_143405) do
     t.bigint "plant_subcategory_id"
     t.string "planting_seasons", default: [], array: true
     t.text "references_urls", default: [], array: true
+    t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.text "variety_description"
     t.boolean "variety_description_ai_populated", default: false, null: false
     t.integer "winter_hardy"
+    t.index ["plant_category_id", "plant_subcategory_id", "slug"], name: "index_plants_on_category_subcategory_slug", unique: true
     t.index ["plant_category_id"], name: "index_plants_on_plant_category_id"
     t.index ["plant_subcategory_id"], name: "index_plants_on_plant_subcategory_id"
   end

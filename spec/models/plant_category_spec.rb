@@ -9,10 +9,23 @@ RSpec.describe PlantCategory, type: :model do
   end
 
   describe "validations" do
-    subject { build(:plant_category) }
+    subject { create(:plant_category) }
 
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_uniqueness_of(:name).scoped_to(:plant_type_id) }
+  end
+
+  describe "slug" do
+    it "generates a slug from the name" do
+      category = PlantCategory.new(name: "Artichoke", plant_type: create(:plant_type))
+      category.valid?
+      expect(category.slug).to eq("artichoke")
+    end
+
+    it "uses slug as to_param" do
+      category = create(:plant_category, name: "Artichoke")
+      expect(category.to_param).to eq("artichoke")
+    end
   end
 
   describe "default scope" do

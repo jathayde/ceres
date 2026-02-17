@@ -25,6 +25,36 @@ RSpec.describe Plant, type: :model do
     }
   end
 
+  describe "slug" do
+    it "generates a slug from the name" do
+      plant = Plant.new(name: "Green Globe", plant_category: create(:plant_category), life_cycle: :annual)
+      plant.valid?
+      expect(plant.slug).to eq("green-globe")
+    end
+
+    it "uses slug as to_param" do
+      plant = create(:plant, name: "Green Globe")
+      expect(plant.to_param).to eq("green-globe")
+    end
+
+    it "handles duplicate slugs within the same scope by appending suffix" do
+      category = create(:plant_category)
+      plant1 = create(:plant, name: "Green Globe", plant_category: category, plant_subcategory: nil)
+      plant2 = create(:plant, name: "Green Globe", plant_category: category, plant_subcategory: nil)
+      expect(plant1.slug).to eq("green-globe")
+      expect(plant2.slug).to eq("green-globe-2")
+    end
+
+    it "allows same slug in different categories" do
+      cat1 = create(:plant_category)
+      cat2 = create(:plant_category)
+      plant1 = create(:plant, name: "Green Globe", plant_category: cat1)
+      plant2 = create(:plant, name: "Green Globe", plant_category: cat2)
+      expect(plant1.slug).to eq("green-globe")
+      expect(plant2.slug).to eq("green-globe")
+    end
+  end
+
   describe "optional subcategory" do
     it "is valid without a plant_subcategory" do
       plant = build(:plant, plant_subcategory: nil)

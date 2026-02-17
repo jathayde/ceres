@@ -1,5 +1,6 @@
 class Plant < ApplicationRecord
   include PgSearch::Model
+  include Sluggable
 
   belongs_to :plant_category
   belongs_to :plant_subcategory, optional: true
@@ -14,6 +15,7 @@ class Plant < ApplicationRecord
 
   validates :name, presence: true
   validates :life_cycle, presence: true
+  validates :slug, presence: true, uniqueness: { scope: [ :plant_category_id, :plant_subcategory_id ] }
 
   after_commit :enqueue_latin_name_lookup, on: :create, if: -> { latin_name.blank? }
 
@@ -82,6 +84,19 @@ class Plant < ApplicationRecord
   end
 
   private
+
+  def generate_slug
+    base_slug = name.parameterize
+    candidate = base_slug
+    counter = 2
+    scope = self.class.where(plant_category_id: plant_category_id, plant_subcategory_id: plant_subcategory_id)
+    scope = scope.where.not(id: id) if persisted?
+    while scope.exists?(slug: candidate)
+      candidate = "#{base_slug}-#{counter}"
+      counter += 1
+    end
+    self.slug = candidate
+  end
 
   def enqueue_latin_name_lookup
     LatinNameLookupJob.perform_later(id)

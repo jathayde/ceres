@@ -7,10 +7,36 @@ RSpec.describe PlantType, type: :model do
   end
 
   describe "validations" do
-    subject { build(:plant_type) }
+    subject { create(:plant_type) }
 
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_uniqueness_of(:name) }
+  end
+
+  describe "slug" do
+    it "generates a slug from the name" do
+      plant_type = PlantType.new(name: "Vegetable")
+      plant_type.valid?
+      expect(plant_type.slug).to eq("vegetable")
+    end
+
+    it "parameterizes multi-word names" do
+      plant_type = PlantType.new(name: "Cover Crop")
+      plant_type.valid?
+      expect(plant_type.slug).to eq("cover-crop")
+    end
+
+    it "uses slug as to_param" do
+      plant_type = create(:plant_type, name: "Vegetable")
+      expect(plant_type.to_param).to eq("vegetable")
+    end
+
+    it "updates slug when name changes" do
+      plant_type = create(:plant_type, name: "Vegetable")
+      plant_type.name = "Fruit"
+      plant_type.valid?
+      expect(plant_type.slug).to eq("fruit")
+    end
   end
 
   describe "default scope" do
