@@ -1,6 +1,8 @@
 <%= render PageHeaderComponent.new(title: "Import: #{@import.original_filename}") %>
 
-<%= turbo_stream_from "spreadsheet_import_#{@import.id}" %>
+<% if @import.parsing? || @import.mapping? || @import.executing? %>
+  <meta http-equiv="refresh" content="3">
+<% end %>
 
 <div id="import_status">
   <%= render "status", import: @import %>
@@ -25,6 +27,7 @@
                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Variety</th>
                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Germ %</th>
                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -45,6 +48,7 @@
                       —
                     <% end %>
                   </td>
+                  <td class="px-3 py-2 text-sm whitespace-nowrap"><%= row.quantity if row.quantity && row.quantity > 1 %></td>
                   <td class="px-3 py-2 text-sm whitespace-nowrap">
                     <% if row.germination_rate %>
                       <%= (row.germination_rate * 100).round(1) %>%

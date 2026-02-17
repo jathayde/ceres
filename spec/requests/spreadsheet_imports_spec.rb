@@ -106,14 +106,14 @@ RSpec.describe "SpreadsheetImports", type: :request do
   end
 
   describe "POST /spreadsheet_imports/:id/start_mapping" do
-    it "enqueues a mapping job and redirects to review" do
+    it "enqueues a mapping job and redirects to show" do
       import = create(:spreadsheet_import, :with_file, :parsed)
 
       expect {
         post start_mapping_spreadsheet_import_path(import)
       }.to have_enqueued_job(SpreadsheetMappingJob)
 
-      expect(response).to redirect_to(review_spreadsheet_import_path(import))
+      expect(response).to redirect_to(spreadsheet_import_path(import))
     end
 
     it "rejects non-parsed imports" do

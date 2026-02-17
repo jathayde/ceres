@@ -10,11 +10,14 @@ class SpreadsheetMappingJob < ApplicationJob
     @existing_categories = load_existing_categories
     @existing_sources = load_existing_sources
 
-    rows = @import.spreadsheet_import_rows.needs_mapping.order(:id)
-    total = rows.count
-    mapped = 0
+    total_rows = @import.spreadsheet_import_rows.count
+    already_mapped = total_rows - @import.spreadsheet_import_rows.needs_mapping.count
+    mapped = already_mapped
 
-    rows.in_batches(of: BATCH_SIZE) do |batch|
+    @import.update!(total_rows: total_rows, mapped_rows: mapped)
+    broadcast_status
+
+    @import.spreadsheet_import_rows.needs_mapping.order(:id).in_batches(of: BATCH_SIZE) do |batch|
       batch_rows = batch.to_a
       map_batch(batch_rows)
       mapped += batch_rows.size
@@ -107,7 +110,7 @@ class SpreadsheetMappingJob < ApplicationJob
       ```
 
       For each row, determine:
-      1. **plant_type**: Which PlantType this belongs to (must be one of: Vegetable, Grain, Herb, Flower, Cover Crop). Use the sheet name as a strong hint.
+      1. **plant_type**: Which PlantType this belongs to (must be one of: Vegetable, Grain, Herb, Flower, Cover Crop, Tree). Use the sheet name as a strong hint.
       2. **category**: Which PlantCategory this belongs to. Match to existing categories when possible. If no existing category fits, suggest a new one.
       3. **subcategory**: Which PlantSubcategory this belongs to (or null if none applies). Only use existing subcategories or suggest new ones when the variety clearly belongs to a known subdivision (e.g., "Bush Bean" → subcategory "Bush" under Bean category).
       4. **normalized_source**: The normalized seed source name. Match to existing sources when possible (handle abbreviations, misspellings, alternate names). If no match, return the cleaned-up name.
@@ -143,10 +146,11 @@ class SpreadsheetMappingJob < ApplicationJob
       key = normalize_duplicate_key(row)
       next if key.blank?
 
-      if seen[key]
-        row.update!(duplicate_of_row_id: seen[key].id, mapping_notes: [ row.mapping_notes, "Possible duplicate of row #{seen[key].row_number} (#{seen[key].sheet_name})" ].compact.join("; "))
+      existing = seen[key]
+      if existing && existing.sheet_name != row.sheet_name
+        row.update!(duplicate_of_row_id: existing.id, mapping_notes: [ row.mapping_notes, "Possible cross-sheet duplicate of row #{existing.row_number} (#{existing.sheet_name})" ].compact.join("; "))
       else
-        seen[key] = row
+        seen[key] ||= row
       end
     end
   end
@@ -154,7 +158,9 @@ class SpreadsheetMappingJob < ApplicationJob
   def normalize_duplicate_key(row)
     name = (row.variety_name || row.mapped_category_name).to_s.downcase.strip.gsub(/\s+/, " ")
     return nil if name.blank?
-    name
+    source = row.seed_source_name.to_s.downcase.strip
+    year = row.year_purchased.to_s
+    [ name, source, year ].join("|")
   end
 
   def broadcast_status

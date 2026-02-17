@@ -7,7 +7,7 @@ class SpreadsheetImport < ApplicationRecord
   validates :original_filename, presence: true
   validate :file_is_xlsx, on: :create
 
-  EXPECTED_SHEETS = [ "Vegetables", "Grains", "Herbs", "Flowers", "Cover Crops" ].freeze
+  EXPECTED_SHEETS = [ "Vegetables", "Grains", "Herbs", "Flowers", "Cover Crops", "Trees" ].freeze
 
   def parsed_percentage
     return 0 if total_rows.zero?

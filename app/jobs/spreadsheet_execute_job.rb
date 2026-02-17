@@ -129,6 +129,7 @@ class SpreadsheetExecuteJob < ApplicationJob
       plant: plant,
       year_purchased: year,
       germination_rate: row.germination_rate,
+      packet_count: row.quantity || 1,
       used_up: row.detected_used_up?,
       used_up_at: row.detected_used_up? ? Date.current : nil
     }

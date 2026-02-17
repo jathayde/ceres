@@ -7,21 +7,25 @@ class SpreadsheetParseJob < ApplicationJob
     "Grains" => "Grain",
     "Herbs" => "Herb",
     "Flowers" => "Flower",
-    "Cover Crops" => "Cover Crop"
+    "Cover Crops" => "Cover Crop",
+    "Trees" => "Tree"
   }.freeze
 
   # Common column name variations for each field.
-  # Order matters: more specific patterns should be checked first.
-  # Each entry is [field, pattern]. Checked in order; first match wins per column.
+  # Order matters: :source must precede :year so "Purchased From" maps to source
+  # (not year via "purchased"). :year must precede :germination so "Germ Date"
+  # maps to year, leaving standalone "Germ" for germination rate.
+  # First match wins per column.
   COLUMN_MATCHERS = [
-    [ :germination, /\b(germ|germination|germ\s*rate|germ\s*%)\b/i ],
+    [ :source, /\b(source|supplier|vendor|company|purchased\s+from)\b|seed\s*from|\bfrom\b/i ],
+    [ :year, /\b(year|purchased|acquired|bought|packed)\b|germ\s*date|(?<!start )(?<!transplant )\bdate\b/i ],
+    [ :germination, /\b(germ(ination)?(\s*(rate|%))?)\b/i ],
     [ :lot, /\b(lot|lot\s*#|lot\s*number)\b/i ],
     [ :cost, /\b(cost|price|\$|paid)\b/i ],
-    [ :quantity, /\b(qty|quantity|count|packets?|seeds?|weight|oz|ounce)\b/i ],
+    [ :quantity, /\b(qty|quantity|count|packets?|seeds?|weight|oz|ounce|amount)\b/i ],
     [ :notes, /\b(notes?|comments?|remarks?|info)\b/i ],
-    [ :source, /\b(source|supplier|vendor|company|purchased\s+from)\b/i ],
-    [ :year, /\b(year|date|purchased|acquired|bought)\b/i ],
-    [ :variety, /\b(variety|name|cultivar|type)\b/i ]
+    [ :variety, /\b(variety|plant|name|cultivar|type)\b/i ],
+    [ :used_up, /\bused\s*(up)?\b/i ]
   ].freeze
 
   def perform(spreadsheet_import_id)
@@ -145,6 +149,8 @@ class SpreadsheetParseJob < ApplicationJob
     warnings << germ_result[:warning] if germ_result[:warning]
 
     notes = extract_string(row_data, column_map[:notes])
+    used_up = gray || detect_used_up_column(row_data, column_map[:used_up])
+    quantity = extract_quantity(row_data, column_map[:quantity])
 
     {
       variety_name: variety_name,
@@ -154,9 +160,10 @@ class SpreadsheetParseJob < ApplicationJob
       germination_rate: germination_rate,
       raw_germination_value: raw_germination_value,
       notes: notes,
-      detected_used_up: gray,
+      detected_used_up: used_up,
       has_gray_text: gray,
-      parse_warnings: warnings
+      parse_warnings: warnings,
+      quantity: quantity
     }
   end
 
@@ -220,21 +227,43 @@ class SpreadsheetParseJob < ApplicationJob
     # Handle numeric values
     if raw_val.is_a?(Numeric)
       rate = raw_val.to_f
+      # Year-like values (e.g., 2018) are germ test dates, not rates
+      return { rate: nil, raw: raw_str, warning: nil } if rate.to_i.between?(1990, 2100)
       # If > 1, assume percentage (e.g., 85 -> 0.85)
       rate = rate / 100.0 if rate > 1.0
       rate = [ [ rate, 0.0 ].max, 1.0 ].min
       return { rate: rate.round(4), raw: raw_str, warning: nil }
     end
 
+    # Skip strings that look like years or lot numbers (not germination rates)
+    return { rate: nil, raw: raw_str, warning: nil } if raw_str.match?(/\A(19|20)\d{2}\z/)
+    return { rate: nil, raw: raw_str, warning: nil } if raw_str.match?(/[A-Za-z]/) && !raw_str.match?(/%/)
+
     # Try to extract percentage from string like "85%", "0.85", etc.
     if raw_str.match?(/[\d.]+/)
       num = raw_str.scan(/[\d.]+/).first.to_f
+      # Year-like values from string parsing
+      return { rate: nil, raw: raw_str, warning: nil } if num.to_i.between?(1990, 2100)
       num = num / 100.0 if num > 1.0
       num = [ [ num, 0.0 ].max, 1.0 ].min
       return { rate: num.round(4), raw: raw_str, warning: nil }
     end
 
     { rate: nil, raw: raw_str, warning: "Could not parse germination rate from '#{raw_str}'" }
+  end
+
+  def extract_quantity(row_data, col_idx)
+    return 1 if col_idx.nil?
+    val = row_data[col_idx]
+    return 1 if val.nil?
+
+    if val.is_a?(Numeric)
+      [ val.to_i, 1 ].max
+    else
+      str = val.to_s.strip
+      num = str.scan(/\d+/).first
+      num ? [ num.to_i, 1 ].max : 1
+    end
   end
 
   def detect_gray_text(workbook, sheet_name, row_num)
@@ -247,6 +276,17 @@ class SpreadsheetParseJob < ApplicationJob
     row_text = row_data.compact.map(&:to_s).join(" ").downcase
 
     row_text.match?(/\b(used\s*up|depleted|gone|empty|finished|out\s*of|no\s*more)\b/)
+  end
+
+  def detect_used_up_column(row_data, col_idx)
+    return false if col_idx.nil?
+    val = row_data[col_idx]
+    return false if val.nil?
+    str = val.to_s.strip
+    return false if str.blank?
+    # Any non-empty value in the "Used up" column means the seeds are used up.
+    # Common values: a year ("2016"), Y/yes/x, or descriptive text ("2016 (1)").
+    true
   end
 
   def broadcast_status(import)

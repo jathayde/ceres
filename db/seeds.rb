@@ -8,7 +8,8 @@ plant_types = [
   { name: "Grain", description: "Cereal and pseudo-cereal crops grown for their seeds.", position: 2 },
   { name: "Herb", description: "Plants used for culinary flavoring, medicinal purposes, or fragrance.", position: 3 },
   { name: "Flower", description: "Ornamental and beneficial insect-attracting flowering plants.", position: 4 },
-  { name: "Cover Crop", description: "Plants grown to improve soil health, prevent erosion, and fix nitrogen.", position: 5 }
+  { name: "Cover Crop", description: "Plants grown to improve soil health, prevent erosion, and fix nitrogen.", position: 5 },
+  { name: "Tree", description: "Perennial woody plants grown for fruit, nuts, timber, or ornamental purposes.", position: 6 }
 ]
 
 plant_types.each do |attrs|

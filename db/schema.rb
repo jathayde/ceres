@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_020243) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_130149) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -168,6 +168,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_020243) do
     t.integer "mapping_status", default: 0, null: false
     t.text "notes"
     t.jsonb "parse_warnings", default: []
+    t.integer "quantity", default: 1
     t.jsonb "raw_data", default: {}
     t.string "raw_date_value"
     t.string "raw_germination_value"

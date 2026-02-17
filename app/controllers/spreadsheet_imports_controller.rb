@@ -22,13 +22,14 @@ class SpreadsheetImportsController < ApplicationController
   end
 
   def start_mapping
-    unless @import.parsed? || @import.mapped?
+    unless @import.parsed? || @import.mapped? || @import.mapping? || @import.failed?
       redirect_to spreadsheet_import_path(@import), alert: "Import must be parsed before mapping."
       return
     end
 
+    @import.update!(status: :parsed, error_message: nil) if @import.mapping? || @import.failed?
     SpreadsheetMappingJob.perform_later(@import.id)
-    redirect_to review_spreadsheet_import_path(@import), notice: "AI mapping started. Results will appear as they are processed."
+    redirect_to spreadsheet_import_path(@import), notice: "AI mapping started. Results will appear as they are processed."
   end
 
   def review

@@ -125,15 +125,15 @@ RSpec.describe SpreadsheetMappingJob, type: :job do
       create(:spreadsheet_import_row,
         spreadsheet_import: import,
         variety_name: "Cherokee Purple",
-        seed_source_name: "Baker Creek",
-        year_purchased: 2020,
-        sheet_name: "Vegetables")
+        seed_source_name: "Johnny's Seeds",
+        year_purchased: 2023,
+        sheet_name: "Herbs")
     end
 
     let(:ai_response_body) do
       [
         { index: 0, plant_type: "Vegetable", category: "Tomato", subcategory: nil, normalized_source: "Johnny's Seeds", confidence: 0.95, notes: nil },
-        { index: 1, plant_type: "Vegetable", category: "Tomato", subcategory: nil, normalized_source: "Baker Creek", confidence: 0.90, notes: nil }
+        { index: 1, plant_type: "Herb", category: "Tomato", subcategory: nil, normalized_source: "Johnny's Seeds", confidence: 0.90, notes: nil }
       ]
     end
 
