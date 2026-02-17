@@ -218,6 +218,152 @@ RSpec.describe "SpreadsheetImports", type: :request do
     end
   end
 
+  describe "GET /spreadsheet_imports/:id/confirm" do
+    it "shows the confirmation summary for mapped imports" do
+      import = create(:spreadsheet_import, :with_file, :mapped)
+      create(:spreadsheet_import_row, :accepted,
+        spreadsheet_import: import,
+        variety_name: "Cherokee Purple",
+        sheet_name: "Vegetables",
+        row_number: 2,
+        mapped_plant_type_name: "Vegetable",
+        mapped_category_name: "Tomato",
+        mapped_source_name: "Baker Creek",
+        year_purchased: 2023)
+
+      get confirm_spreadsheet_import_path(import)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Confirm Import")
+      expect(response.body).to include("Cherokee Purple")
+      expect(response.body).to include("Plants to create")
+      expect(response.body).to include("Purchases to create")
+      expect(response.body).to include("Execute Import")
+    end
+
+    it "shows summary counts" do
+      import = create(:spreadsheet_import, :with_file, :mapped)
+      create(:spreadsheet_import_row, :accepted,
+        spreadsheet_import: import,
+        variety_name: "Cherokee Purple",
+        sheet_name: "Vegetables",
+        row_number: 2,
+        mapped_plant_type_name: "Vegetable",
+        mapped_category_name: "Tomato",
+        mapped_source_name: "Baker Creek",
+        year_purchased: 2023)
+      create(:spreadsheet_import_row, :modified,
+        spreadsheet_import: import,
+        variety_name: "Brandywine",
+        sheet_name: "Vegetables",
+        row_number: 3,
+        mapped_plant_type_name: "Vegetable",
+        mapped_category_name: "Tomato",
+        mapped_source_name: "Seed Savers",
+        year_purchased: 2024)
+
+      get confirm_spreadsheet_import_path(import)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("2") # 2 purchases
+    end
+
+    it "excludes rejected and duplicate rows" do
+      import = create(:spreadsheet_import, :with_file, :mapped)
+      accepted = create(:spreadsheet_import_row, :accepted,
+        spreadsheet_import: import,
+        variety_name: "Cherokee Purple",
+        sheet_name: "Vegetables",
+        row_number: 2,
+        mapped_plant_type_name: "Vegetable",
+        mapped_category_name: "Tomato",
+        mapped_source_name: "Baker Creek",
+        year_purchased: 2023)
+      create(:spreadsheet_import_row, :rejected,
+        spreadsheet_import: import,
+        variety_name: "Skipped Reject Variety",
+        sheet_name: "Vegetables",
+        row_number: 3)
+      create(:spreadsheet_import_row, :accepted,
+        spreadsheet_import: import,
+        variety_name: "Skipped Dupe Variety",
+        sheet_name: "Vegetables",
+        row_number: 4,
+        mapped_plant_type_name: "Vegetable",
+        mapped_category_name: "Tomato",
+        duplicate_of_row_id: accepted.id)
+
+      get confirm_spreadsheet_import_path(import)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Cherokee Purple")
+      expect(response.body).not_to include("Skipped Reject Variety")
+      expect(response.body).not_to include("Skipped Dupe Variety")
+    end
+
+    it "redirects non-mapped imports" do
+      import = create(:spreadsheet_import, :with_file, :parsed)
+
+      get confirm_spreadsheet_import_path(import)
+
+      expect(response).to redirect_to(spreadsheet_import_path(import))
+    end
+  end
+
+  describe "POST /spreadsheet_imports/:id/execute" do
+    it "enqueues an execute job and redirects to show" do
+      import = create(:spreadsheet_import, :with_file, :mapped)
+      create(:spreadsheet_import_row, :accepted,
+        spreadsheet_import: import,
+        variety_name: "Cherokee Purple",
+        sheet_name: "Vegetables",
+        row_number: 2,
+        mapped_plant_type_name: "Vegetable",
+        mapped_category_name: "Tomato",
+        mapped_source_name: "Baker Creek",
+        year_purchased: 2023)
+
+      expect {
+        post execute_spreadsheet_import_path(import)
+      }.to have_enqueued_job(SpreadsheetExecuteJob)
+
+      expect(response).to redirect_to(spreadsheet_import_path(import))
+    end
+
+    it "rejects non-mapped imports" do
+      import = create(:spreadsheet_import, :with_file, :parsed)
+
+      post execute_spreadsheet_import_path(import)
+
+      expect(response).to redirect_to(spreadsheet_import_path(import))
+    end
+  end
+
+  describe "GET /spreadsheet_imports/:id (executed)" do
+    it "shows the import report for executed imports" do
+      import = create(:spreadsheet_import, :with_file, :executed)
+
+      get spreadsheet_import_path(import)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Completed")
+      expect(response.body).to include("Import Summary")
+      expect(response.body).to include("Plants created")
+      expect(response.body).to include("Purchases created")
+      expect(response.body).to include("Sources created")
+      expect(response.body).to include("View Inventory")
+    end
+
+    it "shows the Confirm button for mapped imports" do
+      import = create(:spreadsheet_import, :with_file, :mapped)
+
+      get spreadsheet_import_path(import)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Confirm")
+    end
+  end
+
   describe "POST /spreadsheet_imports/:id/create_taxonomy" do
     let(:import) { create(:spreadsheet_import, :with_file, :mapped) }
 

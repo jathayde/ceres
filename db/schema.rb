@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_015419) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_020243) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -186,6 +186,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_015419) do
   create_table "spreadsheet_imports", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error_message"
+    t.integer "executed_rows", default: 0
+    t.jsonb "import_report", default: {}
     t.integer "mapped_rows", default: 0
     t.string "original_filename", null: false
     t.integer "parsed_rows", default: 0

@@ -1,5 +1,5 @@
 class SpreadsheetImportsController < ApplicationController
-  before_action :set_import, only: %i[ show review start_mapping update_row_mapping create_taxonomy ]
+  before_action :set_import, only: %i[ show review start_mapping update_row_mapping create_taxonomy confirm execute ]
 
   def new
     @import = SpreadsheetImport.new
@@ -101,6 +101,27 @@ class SpreadsheetImportsController < ApplicationController
       end
       format.html { redirect_to review_spreadsheet_import_path(@import), notice: "#{params[:taxonomy_type].capitalize} created." }
     end
+  end
+
+  def confirm
+    unless @import.mapped?
+      redirect_to spreadsheet_import_path(@import), alert: "Import must be mapped and reviewed before confirming."
+      return
+    end
+
+    @summary = @import.import_summary
+    @importable_rows = @import.importable_rows.order(:sheet_name, :row_number)
+    @rows_by_sheet = @importable_rows.group_by(&:sheet_name)
+  end
+
+  def execute
+    unless @import.mapped?
+      redirect_to spreadsheet_import_path(@import), alert: "Import must be mapped before executing."
+      return
+    end
+
+    SpreadsheetExecuteJob.perform_later(@import.id)
+    redirect_to spreadsheet_import_path(@import), notice: "Import started. Progress will update automatically."
   end
 
   private

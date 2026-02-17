@@ -51,6 +51,8 @@ Rails.application.routes.draw do
       get :review
       patch :update_row_mapping
       post :create_taxonomy
+      get :confirm
+      post :execute
     end
   end
 

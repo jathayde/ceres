@@ -37,6 +37,19 @@
         <span class="text-sm text-gray-600">
           <%= import.mapped_rows %> rows mapped — ready for review
         </span>
+      <% when "executing" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+          Importing
+        </span>
+        <span class="text-sm text-gray-600">
+          Imported <%= import.executed_rows %> of <%= import.importable_rows_count %> rows
+          (<%= import.executed_percentage %>%)
+        </span>
+      <% when "executed" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Completed
+        </span>
+        <span class="text-sm text-green-700">Import completed successfully</span>
       <% when "failed" %>
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
           Failed
@@ -71,6 +84,14 @@
           </svg>
           Review Mappings
         <% end %>
+
+        <%= link_to confirm_spreadsheet_import_path(import),
+              class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-md transition-colors" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Confirm &amp; Import
+        <% end %>
       <% end %>
     </div>
   </div>
@@ -92,4 +113,68 @@
       </div>
     </div>
   <% end %>
+
+  <% if import.executing? %>
+    <div class="mt-3">
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-amber-500 h-2 rounded-full transition-all duration-300"
+             style="width: <%= import.executed_percentage %>%"></div>
+      </div>
+    </div>
+  <% end %>
 </div>
+
+<% if import.executed? && import.import_report.present? %>
+  <div class="mt-4 bg-white rounded-lg border border-gray-200 p-4">
+    <h3 class="text-sm font-medium text-gray-900 mb-3">Import Summary</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="text-center">
+        <div class="text-xl font-bold text-green-600"><%= import.import_report["plants_created"] || 0 %></div>
+        <div class="text-xs text-gray-500">Plants created</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-blue-600"><%= import.import_report["purchases_created"] || 0 %></div>
+        <div class="text-xs text-gray-500">Purchases created</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-purple-600"><%= import.import_report["sources_created"] || 0 %></div>
+        <div class="text-xs text-gray-500">Sources created</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-indigo-600"><%= import.import_report["categories_created"] || 0 %></div>
+        <div class="text-xs text-gray-500">Categories created</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-teal-600"><%= import.import_report["subcategories_created"] || 0 %></div>
+        <div class="text-xs text-gray-500">Subcategories created</div>
+      </div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-gray-600"><%= import.import_report["rows_skipped"] || 0 %></div>
+        <div class="text-xs text-gray-500">Rows skipped</div>
+      </div>
+    </div>
+
+    <% errors = import.import_report["errors"] %>
+    <% if errors.present? && errors.any? %>
+      <div class="mt-4 border-t border-gray-200 pt-3">
+        <h4 class="text-sm font-medium text-red-700 mb-2">Errors (<%= errors.size %>)</h4>
+        <ul class="text-sm text-red-600 space-y-1">
+          <% errors.each do |error| %>
+            <li>
+              Row <%= error["row_number"] %> (<%= error["sheet"] %> — <%= error["variety"] %>): <%= error["error"] %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="mt-4 border-t border-gray-200 pt-3">
+      <%= link_to root_path, class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        View Inventory
+      <% end %>
+    </div>
+  </div>
+<% end %>

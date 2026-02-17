@@ -37,7 +37,7 @@ RSpec.describe SpreadsheetImport, type: :model do
   describe "enums" do
     it {
       is_expected.to define_enum_for(:status)
-        .with_values(pending: 0, parsing: 1, parsed: 2, failed: 3, mapping: 4, mapped: 5)
+        .with_values(pending: 0, parsing: 1, parsed: 2, failed: 3, mapping: 4, mapped: 5, executing: 6, executed: 7)
     }
   end
 

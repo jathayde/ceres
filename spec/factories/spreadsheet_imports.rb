@@ -41,6 +41,25 @@ FactoryBot.define do
       sheet_names { [ "Vegetables", "Grains", "Herbs", "Flowers", "Cover Crops" ] }
     end
 
+    trait :executing do
+      status { :executing }
+      total_rows { 100 }
+      parsed_rows { 100 }
+      mapped_rows { 100 }
+      executed_rows { 50 }
+      sheet_names { [ "Vegetables", "Herbs" ] }
+    end
+
+    trait :executed do
+      status { :executed }
+      total_rows { 100 }
+      parsed_rows { 100 }
+      mapped_rows { 100 }
+      executed_rows { 80 }
+      import_report { { "plants_created" => 30, "purchases_created" => 80, "sources_created" => 5, "categories_created" => 2, "subcategories_created" => 1, "rows_skipped" => 0, "errors" => [] } }
+      sheet_names { [ "Vegetables", "Grains", "Herbs", "Flowers", "Cover Crops" ] }
+    end
+
     trait :with_file do
       after(:build) do |import|
         import.file.attach(
