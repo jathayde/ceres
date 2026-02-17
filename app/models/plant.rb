@@ -4,7 +4,6 @@ class Plant < ApplicationRecord
   belongs_to :plant_category
   belongs_to :plant_subcategory, optional: true
 
-  has_one :growing_guide, dependent: :destroy
   has_many :seed_purchases, dependent: :restrict_with_error
   has_many :seed_sources, through: :seed_purchases
 
@@ -58,6 +57,10 @@ class Plant < ApplicationRecord
       INNER JOIN plant_categories pc ON pc.id = p.plant_category_id
       WHERE sp.used_up = FALSE AND (#{condition})
     SQL
+  end
+
+  def growing_guide
+    plant_subcategory&.growing_guide || plant_category.growing_guide
   end
 
   def deletable?

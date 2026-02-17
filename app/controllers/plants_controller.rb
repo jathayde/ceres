@@ -51,7 +51,8 @@ class PlantsController < ApplicationController
   end
 
   def research_growing_guide
-    GrowingGuideResearchJob.perform_later(@plant.id)
+    guideable = @plant.plant_subcategory || @plant.plant_category
+    GrowingGuideResearchJob.perform_later(guideable.id, guideable.class.name)
     redirect_to plant_path(@plant, back_to: params[:back_to]),
       notice: "Growing guide research started. Results will appear shortly."
   end

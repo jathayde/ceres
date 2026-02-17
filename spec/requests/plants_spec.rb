@@ -141,8 +141,29 @@ RSpec.describe "Plants", type: :request do
       end
     end
 
+    context "with variety description" do
+      it "displays variety description when present" do
+        plant.update!(variety_description: "A classic heirloom with rich flavor.", variety_description_ai_populated: true)
+        get plant_path(plant)
+        expect(response.body).to include("A classic heirloom with rich flavor.")
+        expect(response.body).to include("About This Variety")
+      end
+
+      it "displays AI badge when variety_description_ai_populated" do
+        plant.update!(variety_description: "AI-generated description.", variety_description_ai_populated: true)
+        get plant_path(plant)
+        expect(response.body).to include("AI-suggested")
+      end
+
+      it "does not display variety description section when blank" do
+        plant.update!(variety_description: nil)
+        get plant_path(plant)
+        expect(response.body).not_to include("About This Variety")
+      end
+    end
+
     context "with growing guide" do
-      let!(:growing_guide) { create(:growing_guide, plant: plant, sun_exposure: :full_sun, water_needs: :moderate, spacing_inches: 24, overview: "A classic heirloom tomato") }
+      let!(:growing_guide) { create(:growing_guide, plant_category: plant_category, sun_exposure: :full_sun, water_needs: :moderate, spacing_inches: 24, overview: "A classic heirloom tomato") }
 
       it "displays growing guide details" do
         get plant_path(plant)
@@ -334,7 +355,7 @@ RSpec.describe "Plants", type: :request do
     it "enqueues a GrowingGuideResearchJob" do
       expect {
         post research_growing_guide_plant_path(plant)
-      }.to have_enqueued_job(GrowingGuideResearchJob).with(plant.id)
+      }.to have_enqueued_job(GrowingGuideResearchJob).with(plant_category.id, "PlantCategory")
     end
 
     it "redirects to the plant show page" do
@@ -362,7 +383,7 @@ RSpec.describe "Plants", type: :request do
     end
 
     it "displays Re-Research button when guide exists" do
-      create(:growing_guide, plant: plant, overview: "Test", ai_generated: true, ai_generated_at: Time.current)
+      create(:growing_guide, plant_category: plant_category, overview: "Test", ai_generated: true, ai_generated_at: Time.current)
       get plant_path(plant)
       expect(response.body).to include("Re-Research")
     end

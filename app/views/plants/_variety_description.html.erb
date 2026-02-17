@@ -1,0 +1,13 @@
+<div id="plant_<%= plant.id %>_variety_description">
+  <% if plant.variety_description.present? %>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <div class="flex items-center gap-2 mb-2">
+        <h2 class="text-lg font-semibold text-gray-900">About This Variety</h2>
+        <% if plant.variety_description_ai_populated? %>
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700" title="AI-suggested — you can edit this anytime">AI</span>
+        <% end %>
+      </div>
+      <p class="text-sm text-gray-700"><%= plant.variety_description %></p>
+    </div>
+  <% end %>
+</div>

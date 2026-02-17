@@ -44,12 +44,12 @@ class SeedPurchasesController < ApplicationController
 
   def mark_as_used_up
     @seed_purchase.update!(used_up: true, used_up_at: Date.current)
-    redirect_to seed_purchases_path, notice: "#{@seed_purchase.plant.name} (#{@seed_purchase.year_purchased}) marked as used up."
+    redirect_to redirect_back_path, notice: "#{@seed_purchase.plant.name} (#{@seed_purchase.year_purchased}) marked as used up."
   end
 
   def mark_as_active
     @seed_purchase.update!(used_up: false, used_up_at: nil)
-    redirect_to seed_purchases_path, notice: "#{@seed_purchase.plant.name} (#{@seed_purchase.year_purchased}) marked as active."
+    redirect_to redirect_back_path, notice: "#{@seed_purchase.plant.name} (#{@seed_purchase.year_purchased}) marked as active."
   end
 
   def bulk_mark_used_up
@@ -79,6 +79,10 @@ class SeedPurchasesController < ApplicationController
   def load_form_options
     @plants = Plant.includes(:plant_category).order("plant_categories.name", :name).references(:plant_category)
     @seed_sources = SeedSource.all
+  end
+
+  def redirect_back_path
+    params[:redirect_to].presence || seed_purchases_path
   end
 
   def seed_purchase_params

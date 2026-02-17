@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_130149) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_143405) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -53,7 +53,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_130149) do
     t.text "growing_tips"
     t.text "harvest_notes"
     t.text "overview"
-    t.bigint "plant_id", null: false
+    t.bigint "plant_category_id"
+    t.bigint "plant_subcategory_id"
     t.decimal "planting_depth_inches"
     t.integer "row_spacing_inches"
     t.text "seed_saving_notes"
@@ -62,7 +63,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_130149) do
     t.integer "sun_exposure"
     t.datetime "updated_at", null: false
     t.integer "water_needs"
-    t.index ["plant_id"], name: "index_growing_guides_on_plant_id", unique: true
+    t.index ["plant_category_id"], name: "index_growing_guides_on_plant_category_id"
+    t.index ["plant_category_id"], name: "index_growing_guides_on_plant_category_id_unique", unique: true, where: "(plant_category_id IS NOT NULL)"
+    t.index ["plant_subcategory_id"], name: "index_growing_guides_on_plant_subcategory_id"
+    t.index ["plant_subcategory_id"], name: "index_growing_guides_on_plant_subcategory_id_unique", unique: true, where: "(plant_subcategory_id IS NOT NULL)"
+    t.check_constraint "plant_category_id IS NOT NULL AND plant_subcategory_id IS NULL OR plant_category_id IS NULL AND plant_subcategory_id IS NOT NULL", name: "chk_growing_guide_belongs_to_one"
   end
 
   create_table "plant_categories", force: :cascade do |t|
@@ -118,6 +123,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_130149) do
     t.string "planting_seasons", default: [], array: true
     t.text "references_urls", default: [], array: true
     t.datetime "updated_at", null: false
+    t.text "variety_description"
+    t.boolean "variety_description_ai_populated", default: false, null: false
     t.integer "winter_hardy"
     t.index ["plant_category_id"], name: "index_plants_on_plant_category_id"
     t.index ["plant_subcategory_id"], name: "index_plants_on_plant_subcategory_id"
@@ -200,7 +207,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_130149) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "growing_guides", "plants"
+  add_foreign_key "growing_guides", "plant_categories"
+  add_foreign_key "growing_guides", "plant_subcategories"
   add_foreign_key "plant_categories", "plant_types"
   add_foreign_key "plant_subcategories", "plant_categories"
   add_foreign_key "plants", "plant_categories"

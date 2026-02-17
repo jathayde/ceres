@@ -4,7 +4,6 @@ RSpec.describe Plant, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:plant_category) }
     it { is_expected.to belong_to(:plant_subcategory).optional }
-    it { is_expected.to have_one(:growing_guide).dependent(:destroy) }
     it { is_expected.to have_many(:seed_purchases).dependent(:restrict_with_error) }
     it { is_expected.to have_many(:seed_sources).through(:seed_purchases) }
   end
@@ -43,6 +42,57 @@ RSpec.describe Plant, type: :model do
     it "defaults heirloom to false" do
       plant = Plant.new
       expect(plant.heirloom).to be false
+    end
+
+    it "defaults variety_description_ai_populated to false" do
+      plant = Plant.new
+      expect(plant.variety_description_ai_populated).to be false
+    end
+  end
+
+  describe "variety_description" do
+    it "stores and retrieves variety description text" do
+      plant = create(:plant, variety_description: "A classic heirloom tomato.")
+      expect(plant.reload.variety_description).to eq("A classic heirloom tomato.")
+    end
+
+    it "allows nil variety description" do
+      plant = create(:plant, variety_description: nil)
+      expect(plant).to be_valid
+    end
+  end
+
+  describe "#growing_guide" do
+    it "returns the subcategory guide when subcategory has one" do
+      category = create(:plant_category)
+      subcategory = create(:plant_subcategory, plant_category: category)
+      plant = create(:plant, plant_category: category, plant_subcategory: subcategory)
+      sub_guide = create(:growing_guide, :for_subcategory, plant_subcategory: subcategory)
+      create(:growing_guide, plant_category: category)
+
+      expect(plant.growing_guide).to eq(sub_guide)
+    end
+
+    it "falls back to category guide when subcategory has none" do
+      category = create(:plant_category)
+      subcategory = create(:plant_subcategory, plant_category: category)
+      plant = create(:plant, plant_category: category, plant_subcategory: subcategory)
+      cat_guide = create(:growing_guide, plant_category: category)
+
+      expect(plant.growing_guide).to eq(cat_guide)
+    end
+
+    it "returns category guide when plant has no subcategory" do
+      category = create(:plant_category)
+      plant = create(:plant, plant_category: category)
+      cat_guide = create(:growing_guide, plant_category: category)
+
+      expect(plant.growing_guide).to eq(cat_guide)
+    end
+
+    it "returns nil when no guide exists" do
+      plant = create(:plant)
+      expect(plant.growing_guide).to be_nil
     end
   end
 

@@ -1,5 +1,5 @@
 class SpreadsheetImportsController < ApplicationController
-  before_action :set_import, only: %i[ show review start_mapping update_row_mapping create_taxonomy confirm execute ]
+  before_action :set_import, only: %i[ show review start_mapping update_row_mapping create_taxonomy bulk_accept confirm execute ]
 
   def new
     @import = SpreadsheetImport.new
@@ -102,6 +102,13 @@ class SpreadsheetImportsController < ApplicationController
       end
       format.html { redirect_to review_spreadsheet_import_path(@import), notice: "#{params[:taxonomy_type].capitalize} created." }
     end
+  end
+
+  def bulk_accept
+    rows = @import.spreadsheet_import_rows.ai_mapped
+    count = rows.count
+    rows.update_all(mapping_status: SpreadsheetImportRow.mapping_statuses[:accepted])
+    redirect_to review_spreadsheet_import_path(@import), notice: "#{count} rows accepted."
   end
 
   def confirm

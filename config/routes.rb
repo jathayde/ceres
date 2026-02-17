@@ -56,6 +56,7 @@ Rails.application.routes.draw do
       get :review
       patch :update_row_mapping
       post :create_taxonomy
+      post :bulk_accept
       get :confirm
       post :execute
     end

@@ -30,6 +30,19 @@
   </div>
 </div>
 
+<% if @stats[:ai_mapped] > 0 %>
+  <div class="mt-4 flex justify-end">
+    <%= link_to bulk_accept_spreadsheet_import_path(@import),
+          data: { turbo_method: :post, turbo_confirm: "Accept all #{@stats[:ai_mapped]} AI-mapped rows?" },
+          class: "inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      Accept All (<%= @stats[:ai_mapped] %>)
+    <% end %>
+  </div>
+<% end %>
+
 <!-- Taxonomy options (hidden, for Turbo Stream replacement) -->
 <div id="taxonomy_options" class="hidden">
   <%= render "taxonomy_options", plant_types: @plant_types %>

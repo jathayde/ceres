@@ -2,13 +2,38 @@ require "rails_helper"
 
 RSpec.describe GrowingGuide, type: :model do
   describe "associations" do
-    it { is_expected.to belong_to(:plant) }
+    it { is_expected.to belong_to(:plant_category).optional }
+    it { is_expected.to belong_to(:plant_subcategory).optional }
   end
 
   describe "validations" do
-    subject { build(:growing_guide) }
+    it "requires exactly one of plant_category or plant_subcategory" do
+      guide = build(:growing_guide, plant_category: nil, plant_subcategory: nil)
+      expect(guide).not_to be_valid
+      expect(guide.errors[:base]).to include("must belong to a plant category or plant subcategory")
+    end
 
-    it { is_expected.to validate_uniqueness_of(:plant_id) }
+    it "does not allow both plant_category and plant_subcategory" do
+      guide = build(:growing_guide, plant_category: create(:plant_category), plant_subcategory: create(:plant_subcategory))
+      expect(guide).not_to be_valid
+      expect(guide.errors[:base]).to include("cannot belong to both a plant category and a plant subcategory")
+    end
+
+    it "does not allow two growing guides for the same category" do
+      category = create(:plant_category)
+      create(:growing_guide, plant_category: category)
+      duplicate = build(:growing_guide, plant_category: category)
+      expect(duplicate).not_to be_valid
+      expect(duplicate.errors[:plant_category_id]).to include("has already been taken")
+    end
+
+    it "does not allow two growing guides for the same subcategory" do
+      subcategory = create(:plant_subcategory)
+      create(:growing_guide, :for_subcategory, plant_subcategory: subcategory)
+      duplicate = build(:growing_guide, :for_subcategory, plant_subcategory: subcategory)
+      expect(duplicate).not_to be_valid
+      expect(duplicate.errors[:plant_subcategory_id]).to include("has already been taken")
+    end
   end
 
   describe "enums" do
@@ -23,13 +48,17 @@ RSpec.describe GrowingGuide, type: :model do
     }
   end
 
-  describe "unique plant constraint" do
-    it "does not allow two growing guides for the same plant" do
-      plant = create(:plant)
-      create(:growing_guide, plant: plant)
-      duplicate = build(:growing_guide, plant: plant)
-      expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:plant_id]).to include("has already been taken")
+  describe "#guideable" do
+    it "returns the subcategory when present" do
+      subcategory = create(:plant_subcategory)
+      guide = create(:growing_guide, :for_subcategory, plant_subcategory: subcategory)
+      expect(guide.guideable).to eq(subcategory)
+    end
+
+    it "returns the category when no subcategory" do
+      category = create(:plant_category)
+      guide = create(:growing_guide, plant_category: category)
+      expect(guide.guideable).to eq(category)
     end
   end
 
@@ -42,7 +71,12 @@ RSpec.describe GrowingGuide, type: :model do
 
   describe "factory" do
     it "creates a valid growing guide" do
-      guide = build(:growing_guide)
+      guide = create(:growing_guide)
+      expect(guide).to be_valid
+    end
+
+    it "creates a valid growing guide for subcategory" do
+      guide = create(:growing_guide, :for_subcategory)
       expect(guide).to be_valid
     end
   end

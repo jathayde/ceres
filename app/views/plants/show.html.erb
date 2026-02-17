@@ -9,6 +9,7 @@
 </div>
 
 <%= turbo_stream_from "plant_#{@plant.id}_latin_name" %>
+<%= turbo_stream_from "plant_#{@plant.id}_variety_description" %>
 
 <%= render PageHeaderComponent.new(title: @plant.name) do |component| %>
   <% component.with_actions do %>
@@ -105,8 +106,11 @@
   <% end %>
 </div>
 
-<%= turbo_stream_from "plant_#{@plant.id}_growing_guide" %>
-<%= render "plants/growing_guide", plant: @plant, growing_guide: @growing_guide, back_to: params[:back_to] %>
+<%= render "plants/variety_description", plant: @plant %>
+
+<% guideable = @plant.plant_subcategory || @plant.plant_category %>
+<%= turbo_stream_from "growing_guide_#{guideable.class.name.underscore}_#{guideable.id}" %>
+<%= render "plants/growing_guide", plant: @plant, guideable: guideable, growing_guide: @growing_guide, back_to: params[:back_to] %>
 
 <%# Seed Purchases Section %>
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
@@ -162,9 +166,11 @@
             <div class="flex items-center justify-end gap-2">
               <% if purchase.used_up? %>
                 <%= button_to "Mark Active", mark_as_active_seed_purchase_path(purchase), method: :patch,
+                  params: { redirect_to: request.fullpath },
                   class: "text-green-600 hover:text-green-800 text-xs" %>
               <% else %>
                 <%= button_to "Mark Used Up", mark_as_used_up_seed_purchase_path(purchase), method: :patch,
+                  params: { redirect_to: request.fullpath },
                   class: "text-amber-600 hover:text-amber-800 text-xs" %>
               <% end %>
               <%= link_to "Edit", edit_seed_purchase_path(purchase), class: "text-green-600 hover:text-green-800 text-xs" %>

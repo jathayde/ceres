@@ -1,6 +1,13 @@
 <div id="growing_guide_section" class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
   <div class="flex items-center justify-between mb-4">
-    <h2 class="text-lg font-semibold text-gray-900">Growing Guide</h2>
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900">Growing Guide</h2>
+      <% if growing_guide&.persisted? %>
+        <p class="text-xs text-gray-500 mt-0.5">
+          for <%= local_assigns[:guideable]&.name || plant.plant_subcategory&.name || plant.plant_category.name %>
+        </p>
+      <% end %>
+    </div>
     <%= button_to research_growing_guide_plant_path(plant),
       method: :post,
       params: { back_to: local_assigns.fetch(:back_to, nil) },
