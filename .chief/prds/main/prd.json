@@ -446,8 +446,8 @@
         "Summary report after import: records created, skipped, errors"
       ],
       "priority": 27,
-      "passes": false,
-      "inProgress": true
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-028",
@@ -461,7 +461,8 @@
         "Confirmation step before executing merge"
       ],
       "priority": 28,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-029",
@@ -475,7 +476,8 @@
         "UI updates reflect changes immediately via Turbo"
       ],
       "priority": 29,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-030",
@@ -490,7 +492,8 @@
         "All tests pass in CI-compatible environment"
       ],
       "priority": 30,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     }
   ]
 }

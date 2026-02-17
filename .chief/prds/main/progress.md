@@ -30,7 +30,7 @@
 - Column matcher patterns: use ordered array of [field, pattern] pairs; break after first match per header to prevent ambiguous column assignments
 - `spec/support/xlsx_helper.rb` provides `create_test_xlsx` and `create_standard_test_xlsx` for xlsx fixture generation in tests
 - AI batch processing pattern: send batches of 20 rows to Anthropic API with existing taxonomy as context, parse JSON array response by index
-- SpreadsheetImport status flow: pending → parsing → parsed → mapping → mapped (failed from any step)
+- SpreadsheetImport status flow: pending → parsing → parsed → mapping → mapped → executing → executed (failed from any step)
 - SpreadsheetImportRow mapping_status enum: unmapped → ai_mapped → accepted/modified/rejected
 - Factory `:with_file` trait required for SpreadsheetImport creation (file validation on create)
 
@@ -424,4 +424,140 @@
   - SpreadsheetImport status enum extended to 6 values: pending → parsing → parsed → mapping → mapped, with failed as error state from any step
   - Review interface uses Turbo Stream replace on individual row `<tr>` elements for accept/modify/reject without full page reload
   - Cascading dropdowns in inline forms: use `data-plant-type` attributes on options + hide/show via Stimulus instead of fetching from server
+---
+
+## 2026-02-17 - US-027
+- Implemented Spreadsheet Import — Confirm and Execute
+- Added migration for `executed_rows` (integer, default 0) and `import_report` (jsonb, default {}) to `spreadsheet_imports`
+- Extended SpreadsheetImport status enum with `executing: 6` and `executed: 7`
+- Added `importable_rows` scope (accepted + modified, excluding duplicates) and `import_summary` method to SpreadsheetImport
+- Created `SpreadsheetExecuteJob` that:
+  - Processes importable rows in a single database transaction (rollback on failure)
+  - Creates SeedSource records, deduplicating by case-insensitive name match
+  - Creates PlantCategory and PlantSubcategory records as needed
+  - Consolidates duplicate variety rows into single Plant with multiple SeedPurchase records
+  - Sets `used_up: true` and `used_up_at` on rows detected as used up
+  - Falls back to "Unknown" source when no source is mapped
+  - Falls back to current year when `year_purchased` is nil
+  - Defaults new plants to `life_cycle: :annual`
+  - Tracks progress via `executed_rows` and broadcasts Turbo Stream updates every 5 rows
+  - Stores detailed import report: plants_created, purchases_created, sources_created, categories_created, subcategories_created, rows_skipped, errors
+- Added `confirm` action: shows summary counts (plants, purchases, sources, categories) and table of rows to import by sheet
+- Added `execute` action: enqueues SpreadsheetExecuteJob and redirects to show page
+- Updated `_status.html.erb` partial with executing/executed states, progress bar, and import summary report display
+- Added "Confirm & Import" button to mapped imports status bar
+- Added routes: `get :confirm`, `post :execute` on spreadsheet_imports member
+- 27 new specs: 19 job specs (creation, deduplication, consolidation, used_up, transaction rollback, germination, nil-year), 8 request specs (confirm page, summary counts, excluded rows, execute enqueue, redirects, executed report)
+- Updated existing enum spec to include new status values
+- All 518 specs pass, rubocop clean
+- Files changed:
+  - `db/migrate/20260217020243_add_execution_fields_to_spreadsheet_imports.rb` (new)
+  - `app/models/spreadsheet_import.rb` (updated — executing/executed enum, importable_rows, import_summary)
+  - `app/jobs/spreadsheet_execute_job.rb` (new)
+  - `app/controllers/spreadsheet_imports_controller.rb` (updated — confirm, execute actions)
+  - `app/views/spreadsheet_imports/confirm.html.erb` (new)
+  - `app/views/spreadsheet_imports/_status.html.erb` (updated — executing/executed states, report)
+  - `config/routes.rb` (updated — confirm, execute member routes)
+  - `db/schema.rb` (auto-updated)
+  - `spec/jobs/spreadsheet_execute_job_spec.rb` (new)
+  - `spec/requests/spreadsheet_imports_spec.rb` (updated — 8 new specs)
+  - `spec/models/spreadsheet_import_spec.rb` (updated — enum values)
+  - `spec/factories/spreadsheet_imports.rb` (updated — executing, executed traits)
+- **Learnings for future iterations:**
+  - SpreadsheetImport status enum now has 8 values: pending → parsing → parsed → mapping → mapped → executing → executed, with failed from any step
+  - Transaction wrapping is critical for import jobs — `ActiveRecord::Base.transaction do` ensures all-or-nothing
+  - Case-insensitive dedup for seed sources: `SeedSource.find_by("LOWER(name) = ?", name.downcase)`
+  - Plant consolidation: find existing by category + lowercase name, create if not found, add purchase either way
+  - `import_report` is stored as JSONB — keys become strings when serialized/deserialized (use `report["key"]` not `report[:key]` in views)
+  - Turbo confirm dialogs: `data: { turbo_confirm: "message" }` on link_to with turbo_method
+---
+
+## 2026-02-16 - US-028
+- Implemented Seed Source Merge feature
+- Added `merge_with!` method on SeedSource model that:
+  - Accepts a single source or array of sources to merge
+  - Reassigns all seed purchases from merged sources to the primary
+  - Deletes merged (duplicate) source records
+  - Wraps everything in a transaction for atomicity
+  - Raises ArgumentError if trying to merge a source with itself
+- Added merge routes: `GET /seed_sources/merge` (confirmation page) and `POST /seed_sources/execute_merge`
+- Updated seed sources index with:
+  - Checkboxes for multi-select with "select all" header checkbox
+  - Merge toolbar (appears when 2+ sources selected) with selection count and "Merge Selected" button
+  - Stimulus `merge-select` controller for checkbox state management and validation
+- Created merge confirmation view (`merge.html.erb`):
+  - Radio buttons to select primary source to keep
+  - Table showing each source with name, URL, total purchases, active purchases, notes
+  - Confirmation dialog before executing merge
+  - Cancel link back to seed sources index
+- 14 new specs: 7 model specs (merge_with! for reassignment, deletion, preservation, empty source, single source, self-merge, transaction), 7 request specs (merge page, redirect guards, purchase counts, execute merge, multi-source merge)
+- All 532 specs pass, rubocop clean
+- Files changed:
+  - `app/models/seed_source.rb` (updated — added merge_with! method)
+  - `app/controllers/seed_sources_controller.rb` (updated — added merge, execute_merge actions)
+  - `app/views/seed_sources/index.html.erb` (updated — checkboxes, merge toolbar, Stimulus controller)
+  - `app/views/seed_sources/merge.html.erb` (new — merge confirmation page)
+  - `app/javascript/controllers/merge_select_controller.js` (new — Stimulus controller for checkbox selection)
+  - `config/routes.rb` (updated — added merge, execute_merge collection routes)
+  - `spec/models/seed_source_spec.rb` (updated — 7 new merge specs)
+  - `spec/requests/seed_sources_spec.rb` (updated — 7 new merge request specs)
+- **Learnings for future iterations:**
+  - `update_all` on association bypasses callbacks and validations — good for bulk reassignment where we just need to change the FK
+  - `dependent: :restrict_with_error` on has_many prevents deletion when there are associated records, but `destroy!` works after reassignment since purchases are moved first
+  - Stimulus controller targets with `data-merge-select-target` work well for managing multi-select checkbox state and toolbar visibility
+  - Form with `form_tag` + `method: :get` is a clean pattern for sending checkbox selections as query params to a confirmation page
+  - HTML entity escaping in response bodies (e.g., `&#39;` for `'`) means tests should avoid apostrophes in names or use CGI.escapeHTML
+---
+
+## 2026-02-16 - US-029
+- Implemented Bulk Mark-as-Used for Seed Audit
+- Viability audit view already had multi-select checkboxes and bulk mark-as-used action (from US-024)
+- Added multi-select checkboxes to inventory browser `_plant_list.html.erb` partial:
+  - Reuses existing `bulk-select` Stimulus controller for checkbox state management
+  - Toolbar with selection count and "Mark Selected as Used Up" button appears when plants are selected
+  - Confirmation dialog via `data-turbo-confirm` before executing bulk action
+  - Checkboxes only appear for plants with active (non-used-up) purchases
+  - Hidden form submits plant_ids[] array to bulk action endpoint
+- Added `bulk_mark_used_up` action to `InventoryController`:
+  - Accepts `plant_ids[]` param and marks all active purchases for selected plants as used up
+  - Uses `SeedPurchase.where(plant_id: ids, used_up: false).update_all(...)` for single-operation update
+  - Redirects with count notice showing number of purchases marked
+- Added `PATCH /inventory/bulk_mark_used_up` route
+- 11 new specs: 5 UI specs (bulk-select on index/browse, checkbox presence/absence, button), 6 action specs (mark purchases, unselected plants unaffected, already-used-up ignored, multi-plant, count notice, no-selection alert)
+- All 543 specs pass, rubocop clean
+- Files changed:
+  - `app/controllers/inventory_controller.rb` (updated — added bulk_mark_used_up action)
+  - `app/views/inventory/_plant_list.html.erb` (updated — added bulk-select controller, checkboxes, toolbar, form)
+  - `config/routes.rb` (updated — added bulk_mark_used_up_inventory route)
+  - `spec/requests/inventory_spec.rb` (updated — 11 new specs)
+- **Learnings for future iterations:**
+  - The bulk-select Stimulus controller is generic and reusable across viability audit, seed purchases, and inventory views
+  - Inventory browser operates on plants (not individual purchases), so bulk action takes `plant_ids[]` and marks all active purchases for those plants
+  - `update_all` with `used_up: false` condition naturally skips already-used-up purchases, preventing redundant updates
+  - Column count in empty-state `colspan` must be updated when adding checkbox column (3→4 or 4→5)
+---
+
+## 2026-02-16 - US-030
+- Implemented system/integration tests for all five core user workflows
+- Created `spec/requests/workflows/` directory for workflow integration tests
+- 76 new tests covering:
+  1. **Browse taxonomy hierarchy and view plant detail** (12 specs): Inventory home, browse by type/category/subcategory, breadcrumb navigation, plant detail page with metadata/purchases/viability badges/actions
+  2. **Create a new plant with category and add a seed purchase** (12 specs): New plant form, create with required/optional fields, validation rejection, add purchase to plant, end-to-end workflow
+  3. **Search for a plant and filter by viability status** (14 specs): Full-text search by name/partial/empty, viability filters (viable/test/expired), heirloom filter, seed source filter, combined filters, filter state indicators
+  4. **Mark a purchase as used up and verify inventory updates** (11 specs): Single mark used up, mark active again, inventory/audit reflects changes, mark from audit view, bulk mark from inventory/audit
+  5. **Viability audit dashboard with correct status badges** (27 specs): Summary counts, status badges (viable/test/expired), color-coded rows, sorting, filtering (viability/type/category/source/year), audit actions, empty states
+- All 619 tests pass (543 existing + 76 new), rubocop clean
+- Files changed:
+  - `spec/requests/workflows/browse_taxonomy_and_view_plant_spec.rb` (new)
+  - `spec/requests/workflows/create_plant_and_purchase_spec.rb` (new)
+  - `spec/requests/workflows/search_and_filter_spec.rb` (new)
+  - `spec/requests/workflows/mark_purchase_used_up_spec.rb` (new)
+  - `spec/requests/workflows/viability_audit_dashboard_spec.rb` (new)
+- **Learnings for future iterations:**
+  - Request specs (type: :request) are the best approach for CI-compatible integration tests — no browser/Selenium required
+  - Turbo Frame-targeted links don't work with rack_test driver, so test navigation by visiting URLs directly with params
+  - Viability status depends on current year — use `Date.current.year - N` for deterministic year-based test data
+  - `follow_redirect!` in request specs is essential for testing flash messages after redirects
+  - Use `response.body.index("text")` comparisons to verify element ordering in sorted views
+  - The `not_to include("Roma</a>")` pattern helps avoid false positives when a name appears in different contexts (e.g., in nav vs content)
 ---
