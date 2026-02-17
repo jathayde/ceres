@@ -9,5 +9,8 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  resources :seed_sources, only: [ :index ]
+  get "viability_audit", to: "viability_audit#index", as: :viability_audit
+
   root "home#index"
 end

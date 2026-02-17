@@ -75,6 +75,9 @@ group :development, :test do
 
   # Test factories [https://github.com/thoughtbot/factory_bot_rails]
   gem "factory_bot_rails"
+
+  # Capybara for ViewComponent testing [https://github.com/teamcapybara/capybara]
+  gem "capybara"
 end
 
 group :development do
