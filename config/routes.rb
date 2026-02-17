@@ -62,6 +62,7 @@ Rails.application.routes.draw do
   end
 
   get "inventory/browse", to: "inventory#browse", as: :inventory_browse
+  patch "inventory/bulk_mark_used_up", to: "inventory#bulk_mark_used_up", as: :bulk_mark_used_up_inventory
 
   root "inventory#index"
 end

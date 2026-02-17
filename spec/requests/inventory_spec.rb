@@ -247,6 +247,91 @@ RSpec.describe "Inventory", type: :request do
     end
   end
 
+  describe "bulk select UI" do
+    let!(:seed_source) { create(:seed_source, name: "Baker Creek") }
+    let!(:purchase) { create(:seed_purchase, plant: plant, seed_source: seed_source, year_purchased: Date.current.year) }
+
+    it "shows bulk select checkboxes on index" do
+      get root_path
+      expect(response.body).to include("bulk-select")
+      expect(response.body).to include("inventory-bulk-form")
+    end
+
+    it "shows bulk select checkboxes on browse" do
+      get inventory_browse_path(plant_type_id: plant_type.id)
+      expect(response.body).to include("bulk-select")
+      expect(response.body).to include("inventory-bulk-form")
+    end
+
+    it "shows checkboxes for plants with active purchases" do
+      get root_path
+      expect(response.body).to include("name=\"plant_ids[]\" value=\"#{plant.id}\"")
+    end
+
+    it "does not show checkboxes for plants without active purchases" do
+      get root_path
+      expect(response.body).not_to include("name=\"plant_ids[]\" value=\"#{heirloom_plant.id}\"")
+    end
+
+    it "shows Mark Selected as Used Up button" do
+      get root_path
+      expect(response.body).to include("Mark Selected as Used Up")
+    end
+  end
+
+  describe "PATCH /inventory/bulk_mark_used_up" do
+    let!(:seed_source) { create(:seed_source, name: "Baker Creek") }
+    let!(:purchase1) { create(:seed_purchase, plant: plant, seed_source: seed_source, year_purchased: Date.current.year, used_up: false) }
+    let!(:purchase2) { create(:seed_purchase, plant: plant, seed_source: seed_source, year_purchased: Date.current.year - 1, used_up: false) }
+    let!(:heirloom_purchase) { create(:seed_purchase, plant: heirloom_plant, seed_source: seed_source, year_purchased: Date.current.year, used_up: false) }
+    let!(:already_used) { create(:seed_purchase, plant: plant, seed_source: seed_source, year_purchased: Date.current.year - 5, used_up: true, used_up_at: Date.current) }
+
+    it "marks all active purchases for selected plants as used up" do
+      patch bulk_mark_used_up_inventory_path, params: { plant_ids: [ plant.id ] }
+      purchase1.reload
+      purchase2.reload
+      expect(purchase1.used_up?).to be true
+      expect(purchase1.used_up_at).to eq(Date.current)
+      expect(purchase2.used_up?).to be true
+      expect(purchase2.used_up_at).to eq(Date.current)
+    end
+
+    it "does not affect purchases from unselected plants" do
+      patch bulk_mark_used_up_inventory_path, params: { plant_ids: [ plant.id ] }
+      heirloom_purchase.reload
+      expect(heirloom_purchase.used_up?).to be false
+    end
+
+    it "does not re-mark already used-up purchases" do
+      original_date = already_used.used_up_at
+      patch bulk_mark_used_up_inventory_path, params: { plant_ids: [ plant.id ] }
+      already_used.reload
+      expect(already_used.used_up_at).to eq(original_date)
+    end
+
+    it "marks purchases from multiple selected plants" do
+      patch bulk_mark_used_up_inventory_path, params: { plant_ids: [ plant.id, heirloom_plant.id ] }
+      purchase1.reload
+      heirloom_purchase.reload
+      expect(purchase1.used_up?).to be true
+      expect(heirloom_purchase.used_up?).to be true
+    end
+
+    it "redirects with count notice" do
+      patch bulk_mark_used_up_inventory_path, params: { plant_ids: [ plant.id ] }
+      expect(response).to redirect_to(root_path)
+      follow_redirect!
+      expect(response.body).to include("2 purchases marked as used up")
+    end
+
+    it "shows alert when no plants selected" do
+      patch bulk_mark_used_up_inventory_path
+      expect(response).to redirect_to(root_path)
+      follow_redirect!
+      expect(response.body).to include("No plants were selected")
+    end
+  end
+
   describe "search functionality" do
     it "displays a search bar on the index page" do
       get root_path

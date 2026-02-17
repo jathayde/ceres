@@ -14,6 +14,16 @@ class InventoryController < ApplicationController
     load_plants
   end
 
+  def bulk_mark_used_up
+    ids = params[:plant_ids]
+    if ids.present?
+      count = SeedPurchase.where(plant_id: ids, used_up: false).update_all(used_up: true, used_up_at: Date.current)
+      redirect_to root_path, notice: "#{count} #{"purchase".pluralize(count)} marked as used up."
+    else
+      redirect_to root_path, alert: "No plants were selected."
+    end
+  end
+
   private
 
   def load_browse_context
