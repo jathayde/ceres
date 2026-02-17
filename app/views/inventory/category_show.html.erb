@@ -16,7 +16,13 @@
         plant_category: @plant_category
       ) %>
 
-      <h2 class="text-xl font-semibold text-gray-900 mb-2"><%= @plant_category.name %></h2>
+      <div class="flex items-center gap-3 mb-2">
+        <h2 class="text-xl font-semibold text-gray-900"><%= @plant_category.name %></h2>
+        <%= button_to "Add to Buy List",
+            quick_add_buy_list_items_path(buy_list_item: { plant_category_id: @plant_category.id }),
+            method: :post,
+            class: "inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors" %>
+      </div>
       <% if @plant_category.description.present? %>
         <p class="text-sm text-gray-600 mb-6"><%= @plant_category.description %></p>
       <% end %>

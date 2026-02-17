@@ -4,6 +4,7 @@ class PlantSubcategory < ApplicationRecord
   belongs_to :plant_category
   has_one :growing_guide, dependent: :destroy
   has_many :plants, dependent: :restrict_with_error
+  has_many :buy_list_items, dependent: :destroy
 
   validates :name, presence: true, uniqueness: { scope: :plant_category_id }
   validates :slug, presence: true, uniqueness: { scope: :plant_category_id }

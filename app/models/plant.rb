@@ -6,6 +6,7 @@ class Plant < ApplicationRecord
   belongs_to :plant_subcategory, optional: true
 
   has_many :seed_purchases, dependent: :restrict_with_error
+  has_many :buy_list_items, dependent: :destroy
   has_many :seed_sources, through: :seed_purchases
 
   enum :winter_hardy, { hardy: 0, semi_hardy: 1, tender: 2 }

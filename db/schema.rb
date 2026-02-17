@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_145905) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_160751) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_145905) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "buy_list_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.bigint "plant_category_id"
+    t.bigint "plant_id"
+    t.bigint "plant_subcategory_id"
+    t.datetime "purchased_at"
+    t.bigint "seed_purchase_id"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["plant_category_id"], name: "index_buy_list_items_on_plant_category_id"
+    t.index ["plant_id"], name: "index_buy_list_items_on_plant_id"
+    t.index ["plant_subcategory_id"], name: "index_buy_list_items_on_plant_subcategory_id"
+    t.index ["seed_purchase_id"], name: "index_buy_list_items_on_seed_purchase_id"
+    t.check_constraint "plant_category_id IS NOT NULL AND plant_subcategory_id IS NULL AND plant_id IS NULL OR plant_category_id IS NULL AND plant_subcategory_id IS NOT NULL AND plant_id IS NULL OR plant_category_id IS NULL AND plant_subcategory_id IS NULL AND plant_id IS NOT NULL", name: "chk_buy_list_item_exactly_one_target"
   end
 
   create_table "growing_guides", force: :cascade do |t|
@@ -215,6 +232,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_145905) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "buy_list_items", "plant_categories"
+  add_foreign_key "buy_list_items", "plant_subcategories"
+  add_foreign_key "buy_list_items", "plants"
+  add_foreign_key "buy_list_items", "seed_purchases"
   add_foreign_key "growing_guides", "plant_categories"
   add_foreign_key "growing_guides", "plant_subcategories"
   add_foreign_key "plant_categories", "plant_types"

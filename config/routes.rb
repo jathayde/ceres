@@ -49,6 +49,15 @@ Rails.application.routes.draw do
   get "admin", to: "admin#index", as: :admin
   post "admin/research_all_growing_guides", to: "admin#research_all_growing_guides", as: :admin_research_all_growing_guides
 
+  resources :buy_list_items, path: "buy-list", except: :show do
+    collection do
+      post :quick_add
+      get :receive
+      post :fulfill
+      get :plants_for_category
+    end
+  end
+
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
   patch "viability_audit/bulk_mark_used_up", to: "viability_audit#bulk_mark_used_up", as: :viability_audit_bulk_mark_used_up
   patch "viability_audit/mark_as_used_up/:id", to: "viability_audit#mark_as_used_up", as: :viability_audit_mark_as_used_up
