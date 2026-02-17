@@ -22,6 +22,12 @@
         plant_subcategory_id: @plant_subcategory&.id
       }.compact %>
       <%= render "inventory/search_bar", search_query: @search_query, url: inventory_browse_path, browse_params: browse_context %>
+      <%= render "inventory/filters",
+            viability_filter: @viability_filter,
+            heirloom_filter: @heirloom_filter,
+            seed_source_filter: @seed_source_filter,
+            seed_sources: @seed_sources,
+            filters_active: @filters_active %>
 
       <% heading = @plant_subcategory&.name || @plant_category&.name || @plant_type&.name || "All Plants" %>
       <h2 class="text-lg font-semibold text-gray-900 mb-4">

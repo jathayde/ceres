@@ -26,6 +26,38 @@ class Plant < ApplicationRecord
       tsearch: { prefix: true, dictionary: "english" }
     }
 
+  scope :heirloom, -> { where(heirloom: true) }
+  scope :with_seed_source, ->(seed_source_id) {
+    where(id: SeedPurchase.where(seed_source_id: seed_source_id, used_up: false).select(:plant_id))
+  }
+  scope :with_viability_status, ->(status) {
+    where("plants.id IN (#{viability_subquery_sql(status)})")
+  }
+
+  def self.viability_subquery_sql(status)
+    current_year = Date.current.year
+    age_expr = "#{current_year} - sp.year_purchased"
+    viability_expr = "COALESCE(p.expected_viability_years, pc.expected_viability_years)"
+
+    condition = case status.to_sym
+    when :viable
+      "#{age_expr} <= #{viability_expr} AND #{viability_expr} IS NOT NULL"
+    when :test
+      "#{age_expr} > #{viability_expr} AND #{age_expr} <= #{viability_expr} + 2 AND #{viability_expr} IS NOT NULL"
+    when :expired
+      "#{age_expr} > #{viability_expr} + 2 AND #{viability_expr} IS NOT NULL"
+    else
+      "1=0"
+    end
+
+    <<~SQL.squish
+      SELECT sp.plant_id FROM seed_purchases sp
+      INNER JOIN plants p ON p.id = sp.plant_id
+      INNER JOIN plant_categories pc ON pc.id = p.plant_category_id
+      WHERE sp.used_up = FALSE AND (#{condition})
+    SQL
+  end
+
   def deletable?
     seed_purchases.empty?
   end

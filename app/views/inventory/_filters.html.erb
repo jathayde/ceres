@@ -1,0 +1,55 @@
+<div class="mb-4" data-controller="inventory-filters">
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="text-sm font-medium text-gray-700">Filters:</span>
+
+    <%# Viability status filter buttons %>
+    <% viability_options = [ [ "viable", "Viable Only", "bg-green-100 text-green-800 border-green-300", "bg-green-600 text-white border-green-600" ],
+                             [ "test", "Needs Testing", "bg-amber-100 text-amber-800 border-amber-300", "bg-amber-500 text-white border-amber-500" ],
+                             [ "expired", "Expired", "bg-red-100 text-red-800 border-red-300", "bg-red-600 text-white border-red-600" ] ] %>
+    <% viability_options.each do |value, label, inactive_classes, active_classes| %>
+      <% is_active = viability_filter == value %>
+      <%= link_to label,
+            url_for(request.query_parameters.except("viability").merge(is_active ? {} : { viability: value })),
+            class: "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-colors #{is_active ? active_classes : inactive_classes} hover:opacity-80",
+            data: { turbo_frame: "inventory_content", turbo_action: "advance" } %>
+    <% end %>
+
+    <%# Heirloom toggle %>
+    <% heirloom_active = heirloom_filter %>
+    <%= link_to "Heirloom",
+          url_for(request.query_parameters.except("heirloom").merge(heirloom_active ? {} : { heirloom: "1" })),
+          class: "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-colors #{heirloom_active ? 'bg-purple-600 text-white border-purple-600' : 'bg-purple-100 text-purple-800 border-purple-300'} hover:opacity-80",
+          data: { turbo_frame: "inventory_content", turbo_action: "advance" } %>
+
+    <%# Seed source dropdown %>
+    <div class="relative inline-block">
+      <select
+        class="appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 <%= seed_source_filter.present? ? 'bg-green-600 text-white border-green-600' : 'bg-gray-100 text-gray-700 border-gray-300' %>"
+        data-action="change->inventory-filters#selectSource"
+        data-inventory-filters-target="sourceSelect"
+      >
+        <option value="">Seed Source</option>
+        <% seed_sources.each do |source| %>
+          <option value="<%= source.id %>" <%= "selected" if seed_source_filter == source.id.to_s %>><%= source.name %></option>
+        <% end %>
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+        <svg class="h-3 w-3 <%= seed_source_filter.present? ? 'text-white' : 'text-gray-500' %>" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+
+    <%# Clear all filters %>
+    <% if filters_active %>
+      <%= link_to url_for(request.query_parameters.except("viability", "heirloom", "seed_source_id")),
+            class: "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-colors",
+            data: { turbo_frame: "inventory_content", turbo_action: "advance" } do %>
+        <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd" />
+        </svg>
+        Clear filters
+      <% end %>
+    <% end %>
+  </div>
+</div>

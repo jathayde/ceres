@@ -98,6 +98,68 @@ RSpec.describe Plant, type: :model do
     end
   end
 
+  describe ".heirloom" do
+    it "returns only heirloom plants" do
+      heirloom = create(:plant, heirloom: true)
+      create(:plant, heirloom: false)
+
+      expect(Plant.heirloom).to eq([ heirloom ])
+    end
+  end
+
+  describe ".with_seed_source" do
+    it "returns plants with active purchases from the given source" do
+      source = create(:seed_source)
+      other_source = create(:seed_source)
+      plant_a = create(:plant)
+      plant_b = create(:plant)
+      create(:seed_purchase, plant: plant_a, seed_source: source, used_up: false)
+      create(:seed_purchase, plant: plant_b, seed_source: other_source, used_up: false)
+
+      expect(Plant.with_seed_source(source.id)).to eq([ plant_a ])
+    end
+
+    it "excludes used-up purchases" do
+      source = create(:seed_source)
+      plant = create(:plant)
+      create(:seed_purchase, plant: plant, seed_source: source, used_up: true)
+
+      expect(Plant.with_seed_source(source.id)).to be_empty
+    end
+  end
+
+  describe ".with_viability_status" do
+    let(:category) { create(:plant_category, expected_viability_years: 5) }
+
+    it "returns plants with viable purchases" do
+      plant = create(:plant, plant_category: category)
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year)
+
+      expect(Plant.with_viability_status(:viable)).to include(plant)
+    end
+
+    it "returns plants with expired purchases" do
+      plant = create(:plant, plant_category: category)
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year - 10)
+
+      expect(Plant.with_viability_status(:expired)).to include(plant)
+    end
+
+    it "returns plants with test purchases" do
+      plant = create(:plant, plant_category: category)
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year - 6)
+
+      expect(Plant.with_viability_status(:test)).to include(plant)
+    end
+
+    it "excludes used-up purchases" do
+      plant = create(:plant, plant_category: category)
+      create(:seed_purchase, plant: plant, year_purchased: Date.current.year, used_up: true)
+
+      expect(Plant.with_viability_status(:viable)).not_to include(plant)
+    end
+  end
+
   describe ".search" do
     it "finds plants by name" do
       tomato = create(:plant, name: "Cherokee Purple")

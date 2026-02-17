@@ -6,6 +6,12 @@
   <%= turbo_frame_tag "inventory_content" do %>
     <div class="flex-1 min-w-0">
       <%= render "inventory/search_bar", search_query: @search_query, url: root_path %>
+      <%= render "inventory/filters",
+            viability_filter: @viability_filter,
+            heirloom_filter: @heirloom_filter,
+            seed_source_filter: @seed_source_filter,
+            seed_sources: @seed_sources,
+            filters_active: @filters_active %>
 
       <h2 class="text-lg font-semibold text-gray-900 mb-4">
         <% if @search_query.present? %>

@@ -141,6 +141,112 @@ RSpec.describe "Inventory", type: :request do
     end
   end
 
+  describe "filter functionality" do
+    let!(:seed_source) { create(:seed_source, name: "Baker Creek") }
+    let!(:other_source) { create(:seed_source, name: "Territorial") }
+    let!(:viable_purchase) { create(:seed_purchase, plant: plant, seed_source: seed_source, year_purchased: Date.current.year) }
+    let!(:expired_purchase) { create(:seed_purchase, plant: heirloom_plant, seed_source: other_source, year_purchased: Date.current.year - 10) }
+
+    it "renders filter buttons on index" do
+      get root_path
+      expect(response.body).to include("Viable Only")
+      expect(response.body).to include("Needs Testing")
+      expect(response.body).to include("Expired")
+      expect(response.body).to include("Heirloom")
+    end
+
+    it "renders filter buttons on browse" do
+      get inventory_browse_path(plant_type_id: plant_type.id)
+      expect(response.body).to include("Viable Only")
+    end
+
+    it "renders seed source dropdown" do
+      get root_path
+      expect(response.body).to include("Baker Creek")
+      expect(response.body).to include("Territorial")
+    end
+
+    context "filtering by viability status" do
+      it "filters to viable plants only" do
+        get root_path, params: { viability: "viable" }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Sun Gold")
+        expect(response.body).not_to include("Brandywine")
+      end
+
+      it "filters to expired plants only" do
+        get root_path, params: { viability: "expired" }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Brandywine")
+        expect(response.body).not_to include("Sun Gold")
+      end
+    end
+
+    context "filtering by heirloom" do
+      it "shows only heirloom plants" do
+        get root_path, params: { heirloom: "1" }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Brandywine")
+        expect(response.body).not_to include("Sun Gold")
+      end
+    end
+
+    context "filtering by seed source" do
+      it "shows only plants from the selected seed source" do
+        get root_path, params: { seed_source_id: seed_source.id }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Sun Gold")
+        expect(response.body).not_to include("Brandywine")
+      end
+    end
+
+    context "combining filters" do
+      it "combines viability and taxonomy navigation" do
+        get inventory_browse_path, params: { plant_type_id: plant_type.id, viability: "viable" }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Sun Gold")
+        expect(response.body).not_to include("Brandywine")
+      end
+
+      it "combines search and viability filter" do
+        get root_path, params: { q: "Sun", viability: "viable" }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Sun Gold")
+      end
+
+      it "combines heirloom and viability filters" do
+        get root_path, params: { heirloom: "1", viability: "expired" }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Brandywine")
+        expect(response.body).not_to include("Sun Gold")
+      end
+    end
+
+    context "clear filters" do
+      it "shows clear filters button when filters are active" do
+        get root_path, params: { viability: "viable" }
+        expect(response.body).to include("Clear filters")
+      end
+
+      it "does not show clear filters button when no filters active" do
+        get root_path
+        expect(response.body).not_to include("Clear filters")
+      end
+    end
+
+    context "active filter indicators" do
+      it "highlights active viability filter" do
+        get root_path, params: { viability: "viable" }
+        expect(response.body).to include("bg-green-600")
+      end
+
+      it "highlights active heirloom filter" do
+        get root_path, params: { heirloom: "1" }
+        expect(response.body).to include("bg-purple-600")
+      end
+    end
+  end
+
   describe "search functionality" do
     it "displays a search bar on the index page" do
       get root_path

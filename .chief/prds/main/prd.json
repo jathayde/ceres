@@ -312,7 +312,8 @@
         "Filters applied via Turbo without full page reload"
       ],
       "priority": 19,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-020",

@@ -2,6 +2,7 @@ class InventoryController < ApplicationController
   def index
     @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
     @search_query = params[:q].to_s.strip
+    load_filters
     load_plants
   end
 
@@ -9,6 +10,7 @@ class InventoryController < ApplicationController
     @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
     @search_query = params[:q].to_s.strip
     load_browse_context
+    load_filters
     load_plants
   end
 
@@ -27,6 +29,14 @@ class InventoryController < ApplicationController
     end
   end
 
+  def load_filters
+    @viability_filter = params[:viability].presence
+    @heirloom_filter = params[:heirloom] == "1"
+    @seed_source_filter = params[:seed_source_id].presence
+    @seed_sources = SeedSource.all
+    @filters_active = @viability_filter.present? || @heirloom_filter || @seed_source_filter.present?
+  end
+
   def load_plants
     if @search_query.present?
       scope = Plant.search(@search_query)
@@ -42,6 +52,10 @@ class InventoryController < ApplicationController
     elsif @plant_type
       scope = scope.where(plant_category_id: @plant_type.plant_categories.select(:id))
     end
+
+    scope = scope.with_viability_status(@viability_filter) if @viability_filter.present?
+    scope = scope.heirloom if @heirloom_filter
+    scope = scope.with_seed_source(@seed_source_filter) if @seed_source_filter.present?
 
     if @search_query.present?
       @plants = scope.references(:plant_category)
