@@ -37,7 +37,7 @@ RSpec.describe SpreadsheetImport, type: :model do
   describe "enums" do
     it {
       is_expected.to define_enum_for(:status)
-        .with_values(pending: 0, parsing: 1, parsed: 2, failed: 3)
+        .with_values(pending: 0, parsing: 1, parsed: 2, failed: 3, mapping: 4, mapped: 5)
     }
   end
 
@@ -55,6 +55,18 @@ RSpec.describe SpreadsheetImport, type: :model do
     it "rounds to nearest integer" do
       import = build(:spreadsheet_import, total_rows: 3, parsed_rows: 1)
       expect(import.parsed_percentage).to eq(33)
+    end
+  end
+
+  describe "#mapped_percentage" do
+    it "returns 0 when total_rows is 0" do
+      import = build(:spreadsheet_import, total_rows: 0, mapped_rows: 0)
+      expect(import.mapped_percentage).to eq(0)
+    end
+
+    it "calculates percentage correctly" do
+      import = build(:spreadsheet_import, total_rows: 200, mapped_rows: 100)
+      expect(import.mapped_percentage).to eq(50)
     end
   end
 

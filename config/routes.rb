@@ -45,7 +45,14 @@ Rails.application.routes.draw do
   patch "viability_audit/bulk_mark_used_up", to: "viability_audit#bulk_mark_used_up", as: :viability_audit_bulk_mark_used_up
   patch "viability_audit/mark_as_used_up/:id", to: "viability_audit#mark_as_used_up", as: :viability_audit_mark_as_used_up
 
-  resources :spreadsheet_imports, only: %i[ new create show ]
+  resources :spreadsheet_imports, only: %i[ new create show ] do
+    member do
+      post :start_mapping
+      get :review
+      patch :update_row_mapping
+      post :create_taxonomy
+    end
+  end
 
   get "inventory/browse", to: "inventory#browse", as: :inventory_browse
 

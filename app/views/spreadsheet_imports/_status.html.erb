@@ -22,6 +22,21 @@
         <span class="text-sm text-gray-600">
           <%= import.parsed_rows %> rows parsed across <%= import.sheet_names.size %> sheets
         </span>
+      <% when "mapping" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+          AI Mapping
+        </span>
+        <span class="text-sm text-gray-600">
+          Mapped <%= import.mapped_rows %> of <%= import.total_rows %> rows
+          (<%= import.mapped_percentage %>%)
+        </span>
+      <% when "mapped" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+          Mapped
+        </span>
+        <span class="text-sm text-gray-600">
+          <%= import.mapped_rows %> rows mapped — ready for review
+        </span>
       <% when "failed" %>
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
           Failed
@@ -30,13 +45,34 @@
       <% end %>
     </div>
 
-    <% if import.parsed? %>
-      <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3">
+      <% if import.parsed? %>
         <span class="text-xs text-gray-500">
           Sheets: <%= import.sheet_names.join(", ") %>
         </span>
-      </div>
-    <% end %>
+      <% end %>
+
+      <% if import.parsed? %>
+        <%= link_to start_mapping_spreadsheet_import_path(import),
+              data: { turbo_method: :post },
+              class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+          Start AI Mapping
+        <% end %>
+      <% end %>
+
+      <% if import.mapped? %>
+        <%= link_to review_spreadsheet_import_path(import),
+              class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+          Review Mappings
+        <% end %>
+      <% end %>
+    </div>
   </div>
 
   <% if import.parsing? && import.total_rows > 0 %>
@@ -44,6 +80,15 @@
       <div class="w-full bg-gray-200 rounded-full h-2">
         <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
              style="width: <%= import.parsed_percentage %>%"></div>
+      </div>
+    </div>
+  <% end %>
+
+  <% if import.mapping? && import.total_rows > 0 %>
+    <div class="mt-3">
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+             style="width: <%= import.mapped_percentage %>%"></div>
       </div>
     </div>
   <% end %>

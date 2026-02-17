@@ -25,6 +25,22 @@ FactoryBot.define do
       error_message { "Invalid file format" }
     end
 
+    trait :mapping do
+      status { :mapping }
+      total_rows { 100 }
+      parsed_rows { 100 }
+      mapped_rows { 50 }
+      sheet_names { [ "Vegetables", "Herbs" ] }
+    end
+
+    trait :mapped do
+      status { :mapped }
+      total_rows { 100 }
+      parsed_rows { 100 }
+      mapped_rows { 100 }
+      sheet_names { [ "Vegetables", "Grains", "Herbs", "Flowers", "Cover Crops" ] }
+    end
+
     trait :with_file do
       after(:build) do |import|
         import.file.attach(

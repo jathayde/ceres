@@ -411,7 +411,8 @@
         "Handles the various date formats (datetime, plain year, compound strings)"
       ],
       "priority": 25,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-026",
@@ -427,7 +428,8 @@
         "New plant types/categories/subcategories can be created during review"
       ],
       "priority": 26,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-027",

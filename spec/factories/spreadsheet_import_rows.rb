@@ -26,5 +26,29 @@ FactoryBot.define do
     trait :with_warnings do
       parse_warnings { [ "Could not parse year from 'sometime in 2020'" ] }
     end
+
+    trait :ai_mapped do
+      mapping_status { :ai_mapped }
+      mapped_plant_type_name { "Vegetable" }
+      mapped_category_name { "Tomato" }
+      mapped_source_name { seed_source_name }
+      mapping_confidence { 0.92 }
+      ai_mapping_data { { plant_type: "Vegetable", category: "Tomato", confidence: 0.92 } }
+    end
+
+    trait :accepted do
+      ai_mapped
+      mapping_status { :accepted }
+    end
+
+    trait :modified do
+      ai_mapped
+      mapping_status { :modified }
+    end
+
+    trait :rejected do
+      ai_mapped
+      mapping_status { :rejected }
+    end
   end
 end

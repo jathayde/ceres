@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_014525) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_015419) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -153,10 +153,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_014525) do
   end
 
   create_table "spreadsheet_import_rows", force: :cascade do |t|
+    t.jsonb "ai_mapping_data", default: {}
     t.datetime "created_at", null: false
     t.boolean "detected_used_up", default: false, null: false
+    t.bigint "duplicate_of_row_id"
     t.decimal "germination_rate", precision: 5, scale: 4
     t.boolean "has_gray_text", default: false, null: false
+    t.string "mapped_category_name"
+    t.string "mapped_plant_type_name"
+    t.string "mapped_source_name"
+    t.string "mapped_subcategory_name"
+    t.decimal "mapping_confidence", precision: 3, scale: 2
+    t.text "mapping_notes"
+    t.integer "mapping_status", default: 0, null: false
     t.text "notes"
     t.jsonb "parse_warnings", default: []
     t.jsonb "raw_data", default: {}
@@ -169,6 +178,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_014525) do
     t.datetime "updated_at", null: false
     t.string "variety_name"
     t.integer "year_purchased"
+    t.index ["duplicate_of_row_id"], name: "index_spreadsheet_import_rows_on_duplicate_of_row_id"
     t.index ["spreadsheet_import_id", "sheet_name", "row_number"], name: "idx_import_rows_on_import_sheet_row", unique: true
     t.index ["spreadsheet_import_id"], name: "index_spreadsheet_import_rows_on_spreadsheet_import_id"
   end
@@ -176,6 +186,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_014525) do
   create_table "spreadsheet_imports", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error_message"
+    t.integer "mapped_rows", default: 0
     t.string "original_filename", null: false
     t.integer "parsed_rows", default: 0
     t.jsonb "sheet_names", default: []

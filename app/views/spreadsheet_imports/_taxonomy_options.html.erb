@@ -1,0 +1,14 @@
+<% # Hidden data store for JS to read taxonomy structure %>
+<script type="application/json" id="taxonomy_data">
+  <%= raw plant_types.map { |pt|
+    {
+      name: pt.name,
+      categories: pt.plant_categories.map { |cat|
+        {
+          name: cat.name,
+          subcategories: cat.plant_subcategories.map(&:name)
+        }
+      }
+    }
+  }.to_json %>
+</script>

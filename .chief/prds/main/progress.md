@@ -25,6 +25,14 @@
 - Capybara gem is required for ViewComponent testing (added to test group)
 - Nav routes: `seed_sources_path`, `viability_audit_path`, root as Inventory
 - Stimulus controllers go in `app/javascript/controllers/` and auto-register via eager loading
+- `roo` gem for xlsx parsing + `csv` gem (required explicitly for Ruby 3.4+) + `caxlsx` gem for test fixture generation
+- Active Storage is available for file uploads (tables installed)
+- Column matcher patterns: use ordered array of [field, pattern] pairs; break after first match per header to prevent ambiguous column assignments
+- `spec/support/xlsx_helper.rb` provides `create_test_xlsx` and `create_standard_test_xlsx` for xlsx fixture generation in tests
+- AI batch processing pattern: send batches of 20 rows to Anthropic API with existing taxonomy as context, parse JSON array response by index
+- SpreadsheetImport status flow: pending → parsing → parsed → mapping → mapped (failed from any step)
+- SpreadsheetImportRow mapping_status enum: unmapped → ai_mapped → accepted/modified/rejected
+- Factory `:with_file` trait required for SpreadsheetImport creation (file validation on create)
 
 ---
 
@@ -303,4 +311,117 @@
   - The `expected_viability_years_ai_populated` boolean follows the same pattern as `latin_name_ai_populated` and `latin_genus_ai_populated`
   - Turbo Stream broadcast targets must match the DOM element ID exactly for real-time updates
   - Rubocop can't parse ERB files — only lint `.rb` files
+---
+
+## 2026-02-17 - US-025
+- Implemented Spreadsheet Import — File Upload and Parsing
+- Added `roo` gem for .xlsx parsing, `csv` gem (Ruby 3.4 requirement), and `caxlsx` gem for test fixture generation
+- Installed Active Storage for file uploads (migration for active_storage_tables)
+- Created `SpreadsheetImport` model with: original_filename, status (enum: pending/parsing/parsed/failed), total_rows, parsed_rows, error_message, sheet_names (jsonb), Active Storage file attachment
+- Created `SpreadsheetImportRow` model with: spreadsheet_import_id (FK), sheet_name, row_number, variety_name, seed_source_name, year_purchased, raw_date_value, germination_rate, raw_germination_value, notes, detected_used_up, has_gray_text, raw_data (jsonb), parse_warnings (jsonb)
+- Created `SpreadsheetParseJob` background job that:
+  - Opens xlsx via Roo, detects matching sheet tabs (Vegetables, Grains, Herbs, Flowers, Cover Crops)
+  - Maps column headers to fields using regex pattern matching (handles inconsistent column names like "Variety"/"Name"/"Cultivar", "Source"/"Supplier"/"Purchased From")
+  - Extracts variety name, seed source, year/date info, germination data, notes from each row
+  - Handles various date formats: DateTime objects, plain integers, compound strings ("Jan 2023"), 4-digit year extraction
+  - Converts germination rates: decimal (0.92), percentage integer (95→0.95), percentage string ("85%"→0.85)
+  - Detects used-up rows from content patterns ("used up", "depleted", "gone", "empty", "finished")
+  - Stores raw data as JSON and records parse warnings
+  - Broadcasts Turbo Stream status updates during parsing
+- Created `SpreadsheetImportsController` with new (upload form), create (file upload + job enqueue), show (results display)
+- Created views: upload form with file validation, show page with status indicator + parsed rows table by sheet, status partial for Turbo Stream updates
+- Added file-upload Stimulus controller for client-side .xlsx validation
+- Added "Import" link to NavBarComponent navigation
+- Added routes: `resources :spreadsheet_imports, only: [:new, :create, :show]`
+- Created test xlsx fixture helper (`spec/support/xlsx_helper.rb`) using caxlsx for generating test spreadsheets
+- 44 new specs: 10 model specs (SpreadsheetImport + SpreadsheetImportRow), 19 job specs (parsing, column mapping, date/germination extraction, used-up detection, error handling), 7 request specs, 8 factory/validation specs
+- All 458 specs pass, rubocop clean
+- Files changed:
+  - `Gemfile` / `Gemfile.lock` (updated — added roo, csv, caxlsx)
+  - `db/migrate/20260217014401_create_spreadsheet_imports.rb` (new)
+  - `db/migrate/20260217014404_create_spreadsheet_import_rows.rb` (new)
+  - `db/migrate/20260217014525_create_active_storage_tables.active_storage.rb` (new)
+  - `app/models/spreadsheet_import.rb` (new)
+  - `app/models/spreadsheet_import_row.rb` (new)
+  - `app/jobs/spreadsheet_parse_job.rb` (new)
+  - `app/controllers/spreadsheet_imports_controller.rb` (new)
+  - `app/views/spreadsheet_imports/new.html.erb` (new)
+  - `app/views/spreadsheet_imports/show.html.erb` (new)
+  - `app/views/spreadsheet_imports/_status.html.erb` (new)
+  - `app/javascript/controllers/file_upload_controller.js` (new)
+  - `app/components/nav_bar_component.rb` (updated — added Import nav item)
+  - `config/routes.rb` (updated — added spreadsheet_imports resource)
+  - `db/schema.rb` (auto-updated)
+  - `spec/models/spreadsheet_import_spec.rb` (new)
+  - `spec/models/spreadsheet_import_row_spec.rb` (new)
+  - `spec/jobs/spreadsheet_parse_job_spec.rb` (new)
+  - `spec/requests/spreadsheet_imports_spec.rb` (new)
+  - `spec/factories/spreadsheet_imports.rb` (new)
+  - `spec/factories/spreadsheet_import_rows.rb` (new)
+  - `spec/support/xlsx_helper.rb` (new)
+- **Learnings for future iterations:**
+  - Ruby 3.4 removed `csv` from default gems — must add explicitly to Gemfile when using `roo`
+  - Column matcher ordering matters: use ordered array with `break` after first match per header to prevent ambiguous assignments (e.g., "Purchased From" vs "Date Purchased")
+  - Roo doesn't expose cell formatting (font color) for xlsx — used-up detection falls back to content pattern matching ("used up", "gone", etc.)
+  - `caxlsx` gem (Axlsx) is useful for generating test xlsx fixtures programmatically — use `Axlsx::Package` + `workbook.add_worksheet`
+  - Active Storage needs explicit installation via `rails active_storage:install` + migration run
+  - SpreadsheetImport uses `has_one_attached :file` with content type validation in model
+  - JSONB columns are great for storing raw data and parse warnings — flexible schema for varying spreadsheet layouts
+---
+
+## 2026-02-17 - US-026
+- Implemented Spreadsheet Import — AI-Assisted Mapping and Review
+- Created `SpreadsheetMappingJob` that processes parsed rows in batches of 20 via Anthropic Claude API:
+  - Sends existing taxonomy (PlantTypes > Categories > Subcategories) and seed sources as context
+  - AI maps variety names to plant type + category + subcategory structure
+  - AI normalizes seed source names (matches abbreviations, misspellings to existing sources)
+  - AI extracts year_purchased from raw date values already parsed in US-025
+  - Stores confidence scores and mapping notes per row
+- Added mapping columns to `spreadsheet_import_rows`: mapped_plant_type_name, mapped_category_name, mapped_subcategory_name, mapped_source_name, mapping_status (enum), mapping_confidence, ai_mapping_data (jsonb), duplicate_of_row_id, mapping_notes
+- Added `mapping` and `mapped` status values to SpreadsheetImport enum + `mapped_rows`/`mapped_percentage`
+- Added `mapping_status` enum to SpreadsheetImportRow: unmapped, ai_mapped, accepted, modified, rejected
+- Duplicate detection: after AI mapping, identifies rows with identical normalized variety names and flags later occurrences with `duplicate_of_row_id`
+- Created review interface (`review.html.erb`) with:
+  - Stats summary bar (total, AI mapped, accepted, modified, duplicates)
+  - Table showing each row with original data, AI mapping, confidence score, and status badge
+  - Accept/Edit/Reject action buttons per row
+  - Inline edit form with plant type → category cascading dropdowns
+  - Source name normalization display (shows "→ normalized name" when different)
+  - Duplicate badge on flagged rows
+  - Color-coded rows: green (accepted), blue (modified), amber (duplicate), red-dim (rejected)
+- Created `create_taxonomy` action for creating new categories/subcategories during review
+- Added "Start AI Mapping" button to parsed import show page, "Review Mappings" button to mapped imports
+- Added Stimulus controllers: edit_mapping_controller (toggle edit form), mapping_select_controller (cascade plant type → category), modal_controller (taxonomy creation modal)
+- 33 new specs: 10 job specs (mapping, duplicates, error handling, skip already-mapped), 12 model specs (enums, scopes, duplicate?, mapping_complete?), 11 request specs (review page, accept/modify/reject, taxonomy creation, mapping button states)
+- All 491 specs pass, rubocop clean
+- Files changed:
+  - `db/migrate/20260217015407_add_mapping_fields_to_spreadsheet_import_rows.rb` (new)
+  - `db/migrate/20260217015419_add_mapping_status_to_spreadsheet_imports.rb` (new)
+  - `app/models/spreadsheet_import.rb` (updated — mapping/mapped status, mapped_percentage)
+  - `app/models/spreadsheet_import_row.rb` (updated — mapping_status enum, scopes, duplicate?, mapping_complete?)
+  - `app/jobs/spreadsheet_mapping_job.rb` (new — AI batch mapping + duplicate detection)
+  - `app/controllers/spreadsheet_imports_controller.rb` (updated — review, start_mapping, update_row_mapping, create_taxonomy)
+  - `app/views/spreadsheet_imports/review.html.erb` (new)
+  - `app/views/spreadsheet_imports/_review_row.html.erb` (new)
+  - `app/views/spreadsheet_imports/_taxonomy_options.html.erb` (new)
+  - `app/views/spreadsheet_imports/_status.html.erb` (updated — mapping/mapped states, action buttons)
+  - `app/helpers/spreadsheet_imports_helper.rb` (new — row_classes helper)
+  - `app/javascript/controllers/edit_mapping_controller.js` (new)
+  - `app/javascript/controllers/mapping_select_controller.js` (new)
+  - `app/javascript/controllers/modal_controller.js` (new)
+  - `config/routes.rb` (updated — start_mapping, review, update_row_mapping, create_taxonomy member routes)
+  - `db/schema.rb` (auto-updated)
+  - `spec/jobs/spreadsheet_mapping_job_spec.rb` (new)
+  - `spec/models/spreadsheet_import_row_spec.rb` (updated)
+  - `spec/models/spreadsheet_import_spec.rb` (updated)
+  - `spec/requests/spreadsheet_imports_spec.rb` (updated)
+  - `spec/factories/spreadsheet_import_rows.rb` (updated — ai_mapped/accepted/modified/rejected traits)
+  - `spec/factories/spreadsheet_imports.rb` (updated — mapping/mapped traits)
+- **Learnings for future iterations:**
+  - AI batch processing pattern: load existing taxonomy/sources as context, send rows in batches of 20, parse JSON array response mapping to rows by index
+  - Duplicate detection by normalized variety name (lowercase, stripped, whitespace-collapsed) is a simple and effective heuristic
+  - `in_batches(of: N)` with ActiveRecord returns relation batches — call `.to_a` to get actual records for enumeration
+  - SpreadsheetImport status enum extended to 6 values: pending → parsing → parsed → mapping → mapped, with failed as error state from any step
+  - Review interface uses Turbo Stream replace on individual row `<tr>` elements for accept/modify/reject without full page reload
+  - Cascading dropdowns in inline forms: use `data-plant-type` attributes on options + hide/show via Stimulus instead of fetching from server
 ---
