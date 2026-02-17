@@ -1,0 +1,23 @@
+<% content_for(:title) { "#{@plant.name} — Ceres" } %>
+
+<%= render PageHeaderComponent.new(title: "Inventory", subtitle: "Browse and manage your seed collection") %>
+
+<div class="flex gap-6 items-start">
+  <%= render TaxonomySidebarComponent.new(
+    plant_types: @plant_types,
+    selected_type: @plant_type,
+    selected_category: @plant_category,
+    selected_subcategory: @plant_subcategory
+  ) %>
+
+  <div class="flex-1 min-w-0">
+    <%= render InventoryBreadcrumbComponent.new(
+      plant_type: @plant_type,
+      plant_category: @plant_category,
+      plant_subcategory: @plant_subcategory,
+      plant: @plant
+    ) %>
+
+    <%= render "plants/detail", plant: @plant, seed_purchases: @seed_purchases, growing_guide: @growing_guide %>
+  </div>
+</div>

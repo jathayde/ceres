@@ -6,12 +6,83 @@ class InventoryController < ApplicationController
     load_plants
   end
 
-  def browse
+  def type_show
+    @plant_type = PlantType.find_by!(slug: params[:type_slug])
     @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
     @search_query = params[:q].to_s.strip
-    load_browse_context
+    @categories = @plant_type.plant_categories.includes(:plants, :plant_subcategories)
     load_filters
     load_plants
+  end
+
+  def category_show
+    @plant_type = PlantType.find_by!(slug: params[:type_slug])
+    @plant_category = @plant_type.plant_categories.find_by!(slug: params[:category_slug])
+    @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
+    @search_query = params[:q].to_s.strip
+    @guideable = @plant_category
+    @growing_guide = @plant_category.growing_guide
+    @subcategories = @plant_category.plant_subcategories
+    load_filters
+    load_plants
+  end
+
+  def subcategory_show
+    @plant_type = PlantType.find_by!(slug: params[:type_slug])
+    @plant_category = @plant_type.plant_categories.find_by!(slug: params[:category_slug])
+    @plant_subcategory = @plant_category.plant_subcategories.find_by!(slug: params[:subcategory_slug])
+    @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
+    @search_query = params[:q].to_s.strip
+    @guideable = @plant_subcategory
+    @growing_guide = @plant_subcategory.growing_guide
+    load_filters
+    load_plants
+  end
+
+  def variety_show
+    @plant_type = PlantType.find_by!(slug: params[:type_slug])
+    @plant_category = @plant_type.plant_categories.find_by!(slug: params[:category_slug])
+    @plant = @plant_category.plants.where(plant_subcategory_id: nil).find_by!(slug: params[:plant_slug])
+    @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
+    @seed_purchases = @plant.seed_purchases.includes(:seed_source).order(year_purchased: :desc)
+    @growing_guide = @plant.growing_guide
+  end
+
+  def subcategory_variety_show
+    @plant_type = PlantType.find_by!(slug: params[:type_slug])
+    @plant_category = @plant_type.plant_categories.find_by!(slug: params[:category_slug])
+    @plant_subcategory = @plant_category.plant_subcategories.find_by!(slug: params[:subcategory_slug])
+    @plant = @plant_subcategory.plants.find_by!(slug: params[:plant_slug])
+    @plant_types = PlantType.includes(plant_categories: :plant_subcategories).all
+    @seed_purchases = @plant.seed_purchases.includes(:seed_source).order(year_purchased: :desc)
+    @growing_guide = @plant.growing_guide
+    render :variety_show
+  end
+
+  GUIDEABLE_TYPES = { "PlantCategory" => PlantCategory, "PlantSubcategory" => PlantSubcategory }.freeze
+
+  def research_growing_guide
+    klass = GUIDEABLE_TYPES[params[:guideable_type]] || raise(ActiveRecord::RecordNotFound)
+    guideable = klass.find(params[:guideable_id])
+    GrowingGuideResearchJob.perform_later(guideable.id, guideable.class.name)
+    redirect_back fallback_location: root_path,
+      notice: "Growing guide research started. Results will appear shortly."
+  end
+
+  def browse_redirect
+    if params[:plant_subcategory_id].present?
+      sub = PlantSubcategory.find(params[:plant_subcategory_id])
+      cat = sub.plant_category
+      redirect_to inventory_subcategory_path(cat.plant_type.slug, cat.slug, sub.slug), status: :moved_permanently
+    elsif params[:plant_category_id].present?
+      cat = PlantCategory.find(params[:plant_category_id])
+      redirect_to inventory_category_path(cat.plant_type.slug, cat.slug), status: :moved_permanently
+    elsif params[:plant_type_id].present?
+      type = PlantType.find(params[:plant_type_id])
+      redirect_to inventory_type_path(type.slug), status: :moved_permanently
+    else
+      redirect_to root_path, status: :moved_permanently
+    end
   end
 
   def bulk_mark_used_up
@@ -25,19 +96,6 @@ class InventoryController < ApplicationController
   end
 
   private
-
-  def load_browse_context
-    if params[:plant_subcategory_id].present?
-      @plant_subcategory = PlantSubcategory.find(params[:plant_subcategory_id])
-      @plant_category = @plant_subcategory.plant_category
-      @plant_type = @plant_category.plant_type
-    elsif params[:plant_category_id].present?
-      @plant_category = PlantCategory.find(params[:plant_category_id])
-      @plant_type = @plant_category.plant_type
-    elsif params[:plant_type_id].present?
-      @plant_type = PlantType.find(params[:plant_type_id])
-    end
-  end
 
   def load_filters
     @viability_filter = params[:viability].presence

@@ -155,7 +155,7 @@ RSpec.describe "Search for a plant and filter by viability status", type: :reque
     end
 
     it "combines filters with taxonomy browsing" do
-      get inventory_browse_path(plant_type_id: vegetable_type.id, viability: "viable")
+      get inventory_type_path(vegetable_type.slug), params: { viability: "viable" }
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Cherokee Purple")

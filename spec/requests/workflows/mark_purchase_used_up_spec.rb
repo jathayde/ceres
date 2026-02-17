@@ -32,7 +32,7 @@ RSpec.describe "Mark a purchase as used up and verify inventory updates", type: 
     it "shows used up status on the plant detail page" do
       patch mark_as_used_up_seed_purchase_path(active_purchase)
 
-      get plant_path(cherokee_purple)
+      get inventory_variety_path(vegetable_type.slug, tomato_category.slug, cherokee_purple.slug)
       expect(response.body).to include("Mark Active")
       expect(response.body).to include("Used Up")
     end
@@ -73,7 +73,7 @@ RSpec.describe "Mark a purchase as used up and verify inventory updates", type: 
       patch mark_as_used_up_seed_purchase_path(active_purchase)
 
       # After: 1 active purchase remains
-      get plant_path(cherokee_purple)
+      get inventory_variety_path(vegetable_type.slug, tomato_category.slug, cherokee_purple.slug)
       expect(response.body).to include("Mark Used Up")
       expect(response.body).to include("Mark Active")
     end

@@ -48,11 +48,11 @@ class PlantCategoriesController < ApplicationController
   private
 
   def set_plant_type
-    @plant_type = PlantType.find(params[:plant_type_id])
+    @plant_type = PlantType.find_by!(slug: params[:plant_type_id])
   end
 
   def set_plant_category
-    @plant_category = @plant_type.plant_categories.find(params[:id])
+    @plant_category = @plant_type.plant_categories.find_by!(slug: params[:id])
   end
 
   def plant_category_params

@@ -1,11 +1,4 @@
 <%= form_with url: url, method: :get, data: { controller: "search-form", turbo_frame: "inventory_content", turbo_action: "advance" }, class: "mb-4" do |f| %>
-  <% if defined?(browse_params) && browse_params.present? %>
-    <% browse_params.each do |key, value| %>
-      <% if value.present? %>
-        <%= hidden_field_tag key, value %>
-      <% end %>
-    <% end %>
-  <% end %>
   <% %w[viability heirloom seed_source_id].each do |filter_key| %>
     <% if params[filter_key].present? %>
       <%= hidden_field_tag filter_key, params[filter_key] %>

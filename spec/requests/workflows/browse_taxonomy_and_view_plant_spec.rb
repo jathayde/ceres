@@ -52,7 +52,7 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
 
   describe "browsing by plant type" do
     it "shows only plants within the selected type" do
-      get inventory_browse_path(plant_type_id: vegetable_type.id)
+      get inventory_type_path(vegetable_type.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Habanero")
@@ -60,11 +60,18 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
       expect(response.body).to include("Cherokee Purple")
       expect(response.body).not_to include("Genovese Basil")
     end
+
+    it "shows category cards" do
+      get inventory_type_path(vegetable_type.slug)
+
+      expect(response.body).to include("Pepper")
+      expect(response.body).to include("Tomato")
+    end
   end
 
   describe "browsing by category" do
     it "shows only plants within the selected category" do
-      get inventory_browse_path(plant_type_id: vegetable_type.id, plant_category_id: pepper_category.id)
+      get inventory_category_path(vegetable_type.slug, pepper_category.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Habanero")
@@ -72,15 +79,22 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
       expect(response.body).not_to include("Cherokee Purple")
       expect(response.body).not_to include("Genovese Basil")
     end
+
+    it "shows growing guide section" do
+      get inventory_category_path(vegetable_type.slug, pepper_category.slug)
+      expect(response.body).to include("Growing Guide")
+    end
+
+    it "shows subcategory links" do
+      get inventory_category_path(vegetable_type.slug, pepper_category.slug)
+      expect(response.body).to include("Hot Pepper")
+      expect(response.body).to include("Sweet Pepper")
+    end
   end
 
   describe "browsing by subcategory" do
     it "shows only plants within the selected subcategory" do
-      get inventory_browse_path(
-        plant_type_id: vegetable_type.id,
-        plant_category_id: pepper_category.id,
-        plant_subcategory_id: hot_pepper_sub.id
-      )
+      get inventory_subcategory_path(vegetable_type.slug, pepper_category.slug, hot_pepper_sub.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Habanero")
@@ -89,9 +103,9 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
     end
   end
 
-  describe "breadcrumb navigation on browse" do
+  describe "breadcrumb navigation" do
     it "shows breadcrumb with type and category" do
-      get inventory_browse_path(plant_type_id: vegetable_type.id, plant_category_id: pepper_category.id)
+      get inventory_category_path(vegetable_type.slug, pepper_category.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Vegetable")
@@ -99,9 +113,9 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
     end
   end
 
-  describe "plant detail page" do
+  describe "plant detail page via slug URL" do
     it "shows plant metadata and purchase history" do
-      get plant_path(habanero)
+      get inventory_subcategory_variety_path(vegetable_type.slug, pepper_category.slug, hot_pepper_sub.slug, habanero.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Habanero")
@@ -116,13 +130,13 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
     end
 
     it "shows viability badge on purchase" do
-      get plant_path(habanero)
+      get inventory_subcategory_variety_path(vegetable_type.slug, pepper_category.slug, hot_pepper_sub.slug, habanero.slug)
 
       expect(response.body).to include("Viable")
     end
 
     it "shows taxonomy breadcrumb context" do
-      get plant_path(habanero)
+      get inventory_subcategory_variety_path(vegetable_type.slug, pepper_category.slug, hot_pepper_sub.slug, habanero.slug)
 
       expect(response.body).to include("Vegetable")
       expect(response.body).to include("Pepper")
@@ -130,14 +144,14 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
     end
 
     it "has Add Purchase and Edit Plant action links" do
-      get plant_path(habanero)
+      get inventory_subcategory_variety_path(vegetable_type.slug, pepper_category.slug, hot_pepper_sub.slug, habanero.slug)
 
       expect(response.body).to include("Add Purchase")
       expect(response.body).to include("Edit Plant")
     end
 
     it "shows both active and used-up purchases" do
-      get plant_path(habanero)
+      get inventory_subcategory_variety_path(vegetable_type.slug, pepper_category.slug, hot_pepper_sub.slug, habanero.slug)
 
       expect(response.body).to include(Date.current.year.to_s)
       expect(response.body).to include((Date.current.year - 10).to_s)
@@ -146,18 +160,31 @@ RSpec.describe "Browse taxonomy hierarchy and view plant detail", type: :request
     end
 
     it "shows days to harvest range" do
-      get plant_path(habanero)
+      get inventory_subcategory_variety_path(vegetable_type.slug, pepper_category.slug, hot_pepper_sub.slug, habanero.slug)
 
       expect(response.body).to include("90")
       expect(response.body).to include("120")
     end
 
     it "shows plant without purchases" do
-      get plant_path(bell_pepper)
+      get inventory_subcategory_variety_path(vegetable_type.slug, pepper_category.slug, sweet_pepper_sub.slug, bell_pepper.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Bell Pepper")
       expect(response.body).to include("No seed purchases yet")
+    end
+  end
+
+  describe "old URL redirects" do
+    it "redirects old /plants/:id to slug URL" do
+      get plant_path(habanero)
+      expect(response).to have_http_status(:moved_permanently)
+    end
+
+    it "redirects old /inventory/browse to slug URL" do
+      get inventory_browse_path(plant_type_id: vegetable_type.id)
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to(inventory_type_path(vegetable_type.slug))
     end
   end
 end

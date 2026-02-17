@@ -29,10 +29,14 @@ class TaxonomySidebarComponent < ViewComponent::Base
   end
 
   def browse_path(plant_type: nil, plant_category: nil, plant_subcategory: nil)
-    params = {}
-    params[:plant_type_id] = plant_type.id if plant_type
-    params[:plant_category_id] = plant_category.id if plant_category
-    params[:plant_subcategory_id] = plant_subcategory.id if plant_subcategory
-    helpers.inventory_browse_path(params)
+    if plant_subcategory
+      helpers.inventory_subcategory_path(plant_type.slug, plant_category.slug, plant_subcategory.slug)
+    elsif plant_category
+      helpers.inventory_category_path(plant_type.slug, plant_category.slug)
+    elsif plant_type
+      helpers.inventory_type_path(plant_type.slug)
+    else
+      helpers.root_path
+    end
   end
 end

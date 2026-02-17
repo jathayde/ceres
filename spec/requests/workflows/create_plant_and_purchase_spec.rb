@@ -158,7 +158,7 @@ RSpec.describe "Create a new plant with category and add a seed purchase", type:
         }
       }
 
-      get plant_path(plant)
+      get inventory_variety_path(vegetable_type.slug, tomato_category.slug, plant.slug)
       expect(response.body).to include("Baker Creek")
       expect(response.body).to include("2025")
       expect(response.body).to include("XYZ-123")
@@ -191,8 +191,8 @@ RSpec.describe "Create a new plant with category and add a seed purchase", type:
       plant = Plant.find_by!(name: "Roma")
       expect(response).to redirect_to(plants_path)
 
-      # Step 2: View the plant detail
-      get plant_path(plant)
+      # Step 2: View the plant detail via inventory URL
+      get inventory_variety_path(vegetable_type.slug, tomato_category.slug, plant.slug)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Roma")
       expect(response.body).to include("No seed purchases yet")
@@ -209,7 +209,7 @@ RSpec.describe "Create a new plant with category and add a seed purchase", type:
       expect(response).to redirect_to(seed_purchases_path)
 
       # Step 4: Verify purchase appears on plant detail
-      get plant_path(plant)
+      get inventory_variety_path(vegetable_type.slug, tomato_category.slug, plant.slug)
       expect(response.body).to include("Baker Creek")
       expect(response.body).to include(Date.current.year.to_s)
       expect(response.body).not_to include("No seed purchases yet")

@@ -8,8 +8,7 @@ class PlantsController < ApplicationController
   end
 
   def show
-    @seed_purchases = @plant.seed_purchases.includes(:seed_source).order(year_purchased: :desc)
-    @growing_guide = @plant.growing_guide
+    redirect_to helpers.inventory_path_for_plant(@plant), status: :moved_permanently
   end
 
   def new
@@ -70,7 +69,7 @@ class PlantsController < ApplicationController
   private
 
   def set_plant
-    @plant = Plant.find(params[:id])
+    @plant = Plant.find_by(slug: params[:id]) || Plant.find(params[:id])
   end
 
   def load_form_options

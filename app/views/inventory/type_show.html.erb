@@ -1,0 +1,60 @@
+<% content_for(:title) { "#{@plant_type.name} — Ceres" } %>
+
+<%= render PageHeaderComponent.new(title: "Inventory", subtitle: "Browse and manage your seed collection") %>
+
+<div class="flex gap-6 items-start">
+  <%= render TaxonomySidebarComponent.new(
+    plant_types: @plant_types,
+    selected_type: @plant_type
+  ) %>
+
+  <%= turbo_frame_tag "inventory_content" do %>
+    <div class="flex-1 min-w-0">
+      <%= render InventoryBreadcrumbComponent.new(
+        plant_type: @plant_type
+      ) %>
+
+      <h2 class="text-xl font-semibold text-gray-900 mb-2"><%= @plant_type.name %></h2>
+      <% if @plant_type.description.present? %>
+        <p class="text-sm text-gray-600 mb-6"><%= @plant_type.description %></p>
+      <% end %>
+
+      <% if @categories.any? %>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <% @categories.each do |category| %>
+            <%= link_to inventory_category_path(@plant_type.slug, category.slug),
+                  class: "block bg-white rounded-lg border border-gray-200 p-4 hover:border-green-300 hover:shadow-sm transition-all",
+                  data: { turbo_frame: "_top" } do %>
+              <h3 class="font-medium text-gray-900"><%= category.name %></h3>
+              <p class="text-sm text-gray-500 mt-1">
+                <%= category.plants.size %> <%= "variety".pluralize(category.plants.size) %>
+                <% if category.plant_subcategories.any? %>
+                  &middot; <%= category.plant_subcategories.size %> <%= "subcategory".pluralize(category.plant_subcategories.size) %>
+                <% end %>
+              </p>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%= render "inventory/search_bar", search_query: @search_query, url: inventory_type_path(@plant_type.slug) %>
+      <%= render "inventory/filters",
+            viability_filter: @viability_filter,
+            heirloom_filter: @heirloom_filter,
+            seed_source_filter: @seed_source_filter,
+            seed_sources: @seed_sources,
+            filters_active: @filters_active %>
+
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <% if @search_query.present? %>
+          Search results for "<%= @search_query %>" in <%= @plant_type.name %>
+          <span class="text-sm font-normal text-gray-500">(<%= @plants.size %> found)</span>
+        <% else %>
+          All <%= @plant_type.name %> Varieties
+        <% end %>
+      </h3>
+
+      <%= render "inventory/plant_list", plants: @plants, hide_category: false %>
+    </div>
+  <% end %>
+</div>

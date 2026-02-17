@@ -1,0 +1,49 @@
+<% content_for(:title) { "#{@plant_subcategory.name} — #{@plant_category.name} — Ceres" } %>
+
+<%= render PageHeaderComponent.new(title: "Inventory", subtitle: "Browse and manage your seed collection") %>
+
+<div class="flex gap-6 items-start">
+  <%= render TaxonomySidebarComponent.new(
+    plant_types: @plant_types,
+    selected_type: @plant_type,
+    selected_category: @plant_category,
+    selected_subcategory: @plant_subcategory
+  ) %>
+
+  <%= turbo_frame_tag "inventory_content" do %>
+    <div class="flex-1 min-w-0">
+      <%= render InventoryBreadcrumbComponent.new(
+        plant_type: @plant_type,
+        plant_category: @plant_category,
+        plant_subcategory: @plant_subcategory
+      ) %>
+
+      <h2 class="text-xl font-semibold text-gray-900 mb-2"><%= @plant_subcategory.name %></h2>
+      <% if @plant_subcategory.description.present? %>
+        <p class="text-sm text-gray-600 mb-6"><%= @plant_subcategory.description %></p>
+      <% end %>
+
+      <%= turbo_stream_from "growing_guide_plant_subcategory_#{@plant_subcategory.id}" %>
+      <%= render "inventory/growing_guide", guideable: @guideable, growing_guide: @growing_guide %>
+
+      <%= render "inventory/search_bar", search_query: @search_query, url: inventory_subcategory_path(@plant_type.slug, @plant_category.slug, @plant_subcategory.slug) %>
+      <%= render "inventory/filters",
+            viability_filter: @viability_filter,
+            heirloom_filter: @heirloom_filter,
+            seed_source_filter: @seed_source_filter,
+            seed_sources: @seed_sources,
+            filters_active: @filters_active %>
+
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <% if @search_query.present? %>
+          Search results for "<%= @search_query %>" in <%= @plant_subcategory.name %>
+          <span class="text-sm font-normal text-gray-500">(<%= @plants.size %> found)</span>
+        <% else %>
+          Varieties
+        <% end %>
+      </h3>
+
+      <%= render "inventory/plant_list", plants: @plants, hide_category: true %>
+    </div>
+  <% end %>
+</div>

@@ -62,8 +62,24 @@ Rails.application.routes.draw do
     end
   end
 
-  get "inventory/browse", to: "inventory#browse", as: :inventory_browse
+  # Legacy browse redirect (must come before slug-based routes)
+  get "inventory/browse", to: "inventory#browse_redirect", as: :inventory_browse
+
   patch "inventory/bulk_mark_used_up", to: "inventory#bulk_mark_used_up", as: :bulk_mark_used_up_inventory
+
+  # Slug-based inventory routes
+  scope "/inventory" do
+    post "research_growing_guide", to: "inventory#research_growing_guide",
+         as: :inventory_research_growing_guide
+    get ":type_slug", to: "inventory#type_show", as: :inventory_type
+    get ":type_slug/:category_slug", to: "inventory#category_show", as: :inventory_category
+    get ":type_slug/:category_slug/variety/:plant_slug",
+        to: "inventory#variety_show", as: :inventory_variety
+    get ":type_slug/:category_slug/:subcategory_slug",
+        to: "inventory#subcategory_show", as: :inventory_subcategory
+    get ":type_slug/:category_slug/:subcategory_slug/variety/:plant_slug",
+        to: "inventory#subcategory_variety_show", as: :inventory_subcategory_variety
+  end
 
   root "inventory#index"
 end

@@ -42,7 +42,7 @@ class PlantTypesController < ApplicationController
   private
 
   def set_plant_type
-    @plant_type = PlantType.find(params[:id])
+    @plant_type = PlantType.find_by!(slug: params[:id])
   end
 
   def plant_type_params
