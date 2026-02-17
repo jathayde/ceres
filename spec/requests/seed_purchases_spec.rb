@@ -170,6 +170,94 @@ RSpec.describe "SeedPurchases", type: :request do
     end
   end
 
+  describe "PATCH /seed_purchases/:id/mark_as_used_up" do
+    it "marks the purchase as used up" do
+      purchase = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      patch mark_as_used_up_seed_purchase_path(purchase)
+      purchase.reload
+      expect(purchase.used_up).to be true
+      expect(purchase.used_up_at).to eq(Date.current)
+      expect(response).to redirect_to(seed_purchases_path)
+    end
+
+    it "sets a notice flash message" do
+      purchase = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      patch mark_as_used_up_seed_purchase_path(purchase)
+      expect(flash[:notice]).to include("marked as used up")
+    end
+  end
+
+  describe "PATCH /seed_purchases/:id/mark_as_active" do
+    it "marks the purchase as active" do
+      purchase = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: true, used_up_at: Date.current)
+      patch mark_as_active_seed_purchase_path(purchase)
+      purchase.reload
+      expect(purchase.used_up).to be false
+      expect(purchase.used_up_at).to be_nil
+      expect(response).to redirect_to(seed_purchases_path)
+    end
+
+    it "sets a notice flash message" do
+      purchase = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: true, used_up_at: Date.current)
+      patch mark_as_active_seed_purchase_path(purchase)
+      expect(flash[:notice]).to include("marked as active")
+    end
+  end
+
+  describe "PATCH /seed_purchases/bulk_mark_used_up" do
+    it "marks multiple purchases as used up" do
+      p1 = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      p2 = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      patch bulk_mark_used_up_seed_purchases_path, params: { seed_purchase_ids: [ p1.id, p2.id ] }
+      expect(p1.reload.used_up).to be true
+      expect(p2.reload.used_up).to be true
+      expect(p1.used_up_at).to eq(Date.current)
+      expect(p2.used_up_at).to eq(Date.current)
+      expect(response).to redirect_to(seed_purchases_path)
+    end
+
+    it "only marks active purchases" do
+      active = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      already_used = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: true, used_up_at: 1.week.ago.to_date)
+      patch bulk_mark_used_up_seed_purchases_path, params: { seed_purchase_ids: [ active.id, already_used.id ] }
+      expect(active.reload.used_up).to be true
+      expect(flash[:notice]).to include("1 purchase marked as used up")
+    end
+
+    it "redirects with alert when no purchases selected" do
+      patch bulk_mark_used_up_seed_purchases_path
+      expect(response).to redirect_to(seed_purchases_path)
+      expect(flash[:alert]).to include("No purchases were selected")
+    end
+
+    it "sets correct count in notice for multiple" do
+      p1 = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      p2 = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      p3 = create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      patch bulk_mark_used_up_seed_purchases_path, params: { seed_purchase_ids: [ p1.id, p2.id, p3.id ] }
+      expect(flash[:notice]).to include("3 purchases marked as used up")
+    end
+  end
+
+  describe "GET /seed_purchases index displays used-up status" do
+    it "shows Mark Active button for used-up purchases" do
+      create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: true, used_up_at: Date.current)
+      get seed_purchases_path
+      expect(response.body).to include("Mark Active")
+    end
+
+    it "shows Mark Used Up button for active purchases" do
+      create(:seed_purchase, plant: plant, seed_source: seed_source, used_up: false)
+      get seed_purchases_path
+      expect(response.body).to include("Mark Used Up")
+    end
+
+    it "shows select-all checkbox for bulk actions" do
+      get seed_purchases_path
+      expect(response.body).to include('data-bulk-select-target="selectAll"')
+    end
+  end
+
   describe "GET /seed_purchases/plants_search" do
     it "returns plants matching the query" do
       create(:plant, name: "Cherokee Purple", plant_category: plant_category)

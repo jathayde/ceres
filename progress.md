@@ -16,6 +16,7 @@
 - Use `hidden_field_tag` with empty value for array params (like `planting_seasons[]`) so empty arrays submit correctly
 - Inline creation pattern: Stimulus controller + JSON POST endpoint (e.g., `inline_source_controller.js` + `seed_sources/inline_create`)
 - Display fields for user-friendly input (dollars, percentage) synced to hidden fields for actual model values (cents, decimal 0-1) via Stimulus
+- Bulk actions: use HTML `form` attribute on checkboxes to link them to a hidden `form_with`, with Stimulus controller for select-all/toolbar visibility
 ---
 
 ## 2026-02-16 - US-002
@@ -161,4 +162,24 @@
   - SeedPurchase doesn't need `deletable?` guard - purchases can always be deleted
   - `plants_search` endpoint supports typeahead by searching with ILIKE
   - `plant_id` param on new action enables pre-selecting a plant (for linking from plant detail page)
+---
+
+## 2026-02-16 - US-016
+- Implemented "Mark as Used Up" / "Mark as Active" toggle on each seed purchase
+- Added bulk "Mark as Used Up" action with checkbox selection and Stimulus controller
+- Used-up purchases are visually dimmed (opacity-50) and show "Used Up" viability badge
+- Added member routes `mark_as_used_up` and `mark_as_active` (PATCH), collection route `bulk_mark_used_up` (PATCH)
+- Bulk action uses HTML `form` attribute on checkboxes to associate with a hidden form, avoiding nested form issues
+- 221 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - config/routes.rb (added member/collection routes for mark_as_used_up, mark_as_active, bulk_mark_used_up)
+  - app/controllers/seed_purchases_controller.rb (added mark_as_used_up, mark_as_active, bulk_mark_used_up actions)
+  - app/views/seed_purchases/index.html.erb (added toggle buttons, bulk checkboxes, select-all, bulk toolbar)
+  - app/javascript/controllers/bulk_select_controller.js (new - Stimulus controller for checkbox selection + toolbar visibility)
+  - spec/requests/seed_purchases_spec.rb (added 11 specs for mark_as_used_up, mark_as_active, bulk_mark_used_up, index display)
+- **Learnings for future iterations:**
+  - Use HTML `form` attribute on checkboxes to associate them with a remote form element, avoiding nested `<form>` issues with `button_to`
+  - `update_all` returns the count of updated rows, useful for building flash messages
+  - Stimulus `indeterminate` property on checkbox for partial selection state
+  - Bulk actions need CSRF protection which `form_with` handles automatically
 ---

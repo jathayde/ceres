@@ -19,7 +19,15 @@ Rails.application.routes.draw do
   get "plants/categories_for_type", to: "plants#categories_for_type"
   get "plants/subcategories_for_category", to: "plants#subcategories_for_category"
 
-  resources :seed_purchases, except: :show
+  resources :seed_purchases, except: :show do
+    member do
+      patch :mark_as_used_up
+      patch :mark_as_active
+    end
+    collection do
+      patch :bulk_mark_used_up
+    end
+  end
   get "seed_purchases/plants_search", to: "seed_purchases#plants_search"
 
   resources :seed_sources, except: :show

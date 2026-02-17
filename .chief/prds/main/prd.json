@@ -260,7 +260,8 @@
         "Bulk \"mark as used up\" action for selecting multiple purchases at once"
       ],
       "priority": 16,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-017",

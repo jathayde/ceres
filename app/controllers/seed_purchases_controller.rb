@@ -1,5 +1,5 @@
 class SeedPurchasesController < ApplicationController
-  before_action :set_seed_purchase, only: %i[edit update destroy]
+  before_action :set_seed_purchase, only: %i[edit update destroy mark_as_used_up mark_as_active]
 
   def index
     @seed_purchases = SeedPurchase.includes(:plant, :seed_source)
@@ -40,6 +40,26 @@ class SeedPurchasesController < ApplicationController
   def destroy
     @seed_purchase.destroy
     redirect_to seed_purchases_path, notice: "Seed purchase was successfully deleted."
+  end
+
+  def mark_as_used_up
+    @seed_purchase.update!(used_up: true, used_up_at: Date.current)
+    redirect_to seed_purchases_path, notice: "#{@seed_purchase.plant.name} (#{@seed_purchase.year_purchased}) marked as used up."
+  end
+
+  def mark_as_active
+    @seed_purchase.update!(used_up: false, used_up_at: nil)
+    redirect_to seed_purchases_path, notice: "#{@seed_purchase.plant.name} (#{@seed_purchase.year_purchased}) marked as active."
+  end
+
+  def bulk_mark_used_up
+    ids = params[:seed_purchase_ids]
+    if ids.present?
+      count = SeedPurchase.where(id: ids, used_up: false).update_all(used_up: true, used_up_at: Date.current)
+      redirect_to seed_purchases_path, notice: "#{count} #{"purchase".pluralize(count)} marked as used up."
+    else
+      redirect_to seed_purchases_path, alert: "No purchases were selected."
+    end
   end
 
   def plants_search
