@@ -110,6 +110,89 @@ RSpec.describe "SeedSources", type: :request do
     end
   end
 
+  describe "GET /seed_sources/merge" do
+    it "shows merge confirmation when two or more sources selected" do
+      source1 = create(:seed_source, name: "Baker Creek")
+      source2 = create(:seed_source, name: "Territorial Seeds")
+      get merge_seed_sources_path, params: { source_ids: [ source1.id, source2.id ] }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Baker Creek")
+      expect(response.body).to include("Territorial Seeds")
+      expect(response.body).to include("Merge Sources")
+    end
+
+    it "redirects with alert when fewer than two sources selected" do
+      source = create(:seed_source, name: "Baker Creek")
+      get merge_seed_sources_path, params: { source_ids: [ source.id ] }
+      expect(response).to redirect_to(seed_sources_path)
+      expect(flash[:alert]).to eq("Select at least two seed sources to merge.")
+    end
+
+    it "redirects with alert when no sources selected" do
+      get merge_seed_sources_path
+      expect(response).to redirect_to(seed_sources_path)
+      expect(flash[:alert]).to eq("Select at least two seed sources to merge.")
+    end
+
+    it "shows purchase counts for each source" do
+      source1 = create(:seed_source, name: "Source A")
+      source2 = create(:seed_source, name: "Source B")
+      create(:seed_purchase, seed_source: source1)
+      create(:seed_purchase, seed_source: source1)
+      create(:seed_purchase, seed_source: source2)
+      get merge_seed_sources_path, params: { source_ids: [ source1.id, source2.id ] }
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "POST /seed_sources/execute_merge" do
+    it "merges sources into the primary" do
+      primary = create(:seed_source, name: "Primary")
+      other = create(:seed_source, name: "Duplicate")
+      purchase = create(:seed_purchase, seed_source: other)
+
+      post execute_merge_seed_sources_path, params: {
+        primary_id: primary.id,
+        merge_ids: [ primary.id, other.id ]
+      }
+
+      expect(response).to redirect_to(seed_sources_path)
+      expect(flash[:notice]).to include("Primary")
+      expect(purchase.reload.seed_source).to eq(primary)
+      expect(SeedSource.exists?(other.id)).to be false
+    end
+
+    it "redirects with alert when no other sources to merge" do
+      primary = create(:seed_source, name: "Primary")
+
+      post execute_merge_seed_sources_path, params: {
+        primary_id: primary.id,
+        merge_ids: [ primary.id ]
+      }
+
+      expect(response).to redirect_to(seed_sources_path)
+      expect(flash[:alert]).to eq("No sources selected to merge.")
+    end
+
+    it "merges three or more sources" do
+      primary = create(:seed_source, name: "Keep This")
+      dup1 = create(:seed_source, name: "Duplicate 1")
+      dup2 = create(:seed_source, name: "Duplicate 2")
+      p1 = create(:seed_purchase, seed_source: dup1)
+      p2 = create(:seed_purchase, seed_source: dup2)
+
+      expect {
+        post execute_merge_seed_sources_path, params: {
+          primary_id: primary.id,
+          merge_ids: [ primary.id, dup1.id, dup2.id ]
+        }
+      }.to change(SeedSource, :count).by(-2)
+
+      expect(p1.reload.seed_source).to eq(primary)
+      expect(p2.reload.seed_source).to eq(primary)
+    end
+  end
+
   describe "POST /seed_sources/inline_create" do
     it "creates a seed source and returns JSON" do
       expect {

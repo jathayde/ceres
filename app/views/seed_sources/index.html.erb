@@ -4,45 +4,60 @@
   <% end %>
 <% end %>
 
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active Purchases</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-200">
-      <% @seed_sources.each do |seed_source| %>
-        <%= turbo_frame_tag seed_source do %>
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900"><%= seed_source.name %></td>
-            <td class="px-6 py-4 text-sm text-gray-500">
-              <% if seed_source.url.present? %>
-                <%= link_to truncate(seed_source.url, length: 40), seed_source.url, target: "_blank", rel: "noopener noreferrer", class: "text-green-600 hover:text-green-800 hover:underline" %>
-              <% end %>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-500"><%= seed_source.active_purchases_count %></td>
-            <td class="px-6 py-4 text-sm text-gray-500"><%= truncate(seed_source.notes, length: 60) %></td>
-            <td class="px-6 py-4 text-sm text-right space-x-2">
-              <%= link_to "Edit", edit_seed_source_path(seed_source), class: "text-green-600 hover:text-green-800" %>
-              <% if seed_source.deletable? %>
-                <%= button_to "Delete", seed_source_path(seed_source), method: :delete,
-                  class: "text-red-600 hover:text-red-800",
-                  form: { data: { turbo_confirm: "Are you sure you want to delete #{seed_source.name}?" } } %>
-              <% end %>
-            </td>
+<%= form_tag merge_seed_sources_path, method: :get, data: { controller: "merge-select", action: "submit->merge-select#validateSelection" } do %>
+  <div class="mb-4 flex items-center gap-2" data-merge-select-target="toolbar" style="display: none;">
+    <span class="text-sm text-gray-600" data-merge-select-target="count">0 selected</span>
+    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors" data-merge-select-target="mergeButton">
+      Merge Selected
+    </button>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+            <input type="checkbox" data-merge-select-target="selectAll" data-action="change->merge-select#toggleAll" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active Purchases</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <% @seed_sources.each do |seed_source| %>
+          <%= turbo_frame_tag seed_source do %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-4">
+                <input type="checkbox" name="source_ids[]" value="<%= seed_source.id %>" data-merge-select-target="checkbox" data-action="change->merge-select#updateSelection" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+              </td>
+              <td class="px-6 py-4 text-sm font-medium text-gray-900"><%= seed_source.name %></td>
+              <td class="px-6 py-4 text-sm text-gray-500">
+                <% if seed_source.url.present? %>
+                  <%= link_to truncate(seed_source.url, length: 40), seed_source.url, target: "_blank", rel: "noopener noreferrer", class: "text-green-600 hover:text-green-800 hover:underline" %>
+                <% end %>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-500"><%= seed_source.active_purchases_count %></td>
+              <td class="px-6 py-4 text-sm text-gray-500"><%= truncate(seed_source.notes, length: 60) %></td>
+              <td class="px-6 py-4 text-sm text-right space-x-2">
+                <%= link_to "Edit", edit_seed_source_path(seed_source), class: "text-green-600 hover:text-green-800" %>
+                <% if seed_source.deletable? %>
+                  <%= button_to "Delete", seed_source_path(seed_source), method: :delete,
+                    class: "text-red-600 hover:text-red-800",
+                    form: { data: { turbo_confirm: "Are you sure you want to delete #{seed_source.name}?" } } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+        <% if @seed_sources.empty? %>
+          <tr>
+            <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">No seed sources yet. Create one to get started.</td>
           </tr>
         <% end %>
-      <% end %>
-      <% if @seed_sources.empty? %>
-        <tr>
-          <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No seed sources yet. Create one to get started.</td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+      </tbody>
+    </table>
+  </div>
+<% end %>

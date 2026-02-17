@@ -12,4 +12,16 @@ class SeedSource < ApplicationRecord
   def deletable?
     seed_purchases.empty?
   end
+
+  def merge_with!(others)
+    others = Array(others)
+    raise ArgumentError, "cannot merge a source with itself" if others.include?(self)
+
+    ActiveRecord::Base.transaction do
+      others.each do |other|
+        other.seed_purchases.update_all(seed_source_id: id)
+        other.destroy!
+      end
+    end
+  end
 end

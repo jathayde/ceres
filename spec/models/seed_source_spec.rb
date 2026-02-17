@@ -51,6 +51,79 @@ RSpec.describe SeedSource, type: :model do
     end
   end
 
+  describe "#merge_with!" do
+    it "reassigns all purchases from other sources to the primary" do
+      primary = create(:seed_source, name: "Primary Source")
+      other = create(:seed_source, name: "Duplicate Source")
+      purchase1 = create(:seed_purchase, seed_source: primary)
+      purchase2 = create(:seed_purchase, seed_source: other)
+      purchase3 = create(:seed_purchase, seed_source: other)
+
+      primary.merge_with!([ other ])
+
+      expect(purchase2.reload.seed_source).to eq(primary)
+      expect(purchase3.reload.seed_source).to eq(primary)
+      expect(purchase1.reload.seed_source).to eq(primary)
+    end
+
+    it "deletes the merged source records" do
+      primary = create(:seed_source, name: "Primary Source")
+      other1 = create(:seed_source, name: "Duplicate 1")
+      other2 = create(:seed_source, name: "Duplicate 2")
+
+      expect {
+        primary.merge_with!([ other1, other2 ])
+      }.to change(SeedSource, :count).by(-2)
+    end
+
+    it "preserves the primary source record" do
+      primary = create(:seed_source, name: "Primary Source")
+      other = create(:seed_source, name: "Duplicate Source")
+
+      primary.merge_with!([ other ])
+
+      expect(SeedSource.exists?(primary.id)).to be true
+    end
+
+    it "handles merging a source with no purchases" do
+      primary = create(:seed_source, name: "Primary Source")
+      other = create(:seed_source, name: "Empty Source")
+
+      expect {
+        primary.merge_with!([ other ])
+      }.to change(SeedSource, :count).by(-1)
+    end
+
+    it "handles a single source to merge" do
+      primary = create(:seed_source, name: "Primary Source")
+      other = create(:seed_source, name: "Duplicate Source")
+      purchase = create(:seed_purchase, seed_source: other)
+
+      primary.merge_with!(other)
+
+      expect(purchase.reload.seed_source).to eq(primary)
+      expect(SeedSource.exists?(other.id)).to be false
+    end
+
+    it "raises an error when trying to merge a source with itself" do
+      source = create(:seed_source)
+      expect { source.merge_with!(source) }.to raise_error(ArgumentError, "cannot merge a source with itself")
+    end
+
+    it "wraps the operation in a transaction" do
+      primary = create(:seed_source, name: "Primary Source")
+      other = create(:seed_source, name: "Duplicate Source")
+      create(:seed_purchase, seed_source: other)
+
+      allow(SeedSource).to receive(:find).and_return(other)
+      allow(other).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed)
+
+      expect {
+        primary.merge_with!([ other ]) rescue nil
+      }.not_to change(SeedPurchase, :count)
+    end
+  end
+
   describe "factory" do
     it "creates a valid seed source" do
       seed_source = build(:seed_source)

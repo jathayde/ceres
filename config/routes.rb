@@ -39,7 +39,12 @@ Rails.application.routes.draw do
   end
   get "seed_purchases/plants_search", to: "seed_purchases#plants_search"
 
-  resources :seed_sources, except: :show
+  resources :seed_sources, except: :show do
+    collection do
+      get :merge
+      post :execute_merge
+    end
+  end
   post "seed_sources/inline_create", to: "seed_sources#inline_create"
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
   patch "viability_audit/bulk_mark_used_up", to: "viability_audit#bulk_mark_used_up", as: :viability_audit_bulk_mark_used_up
