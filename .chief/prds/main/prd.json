@@ -212,7 +212,8 @@
         "Sorted alphabetically by name"
       ],
       "priority": 13,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-014",

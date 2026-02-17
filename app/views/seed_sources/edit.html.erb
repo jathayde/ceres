@@ -1,0 +1,9 @@
+<%= turbo_frame_tag @seed_source do %>
+  <%= render PageHeaderComponent.new(title: "Edit Seed Source") %>
+
+  <div class="max-w-2xl">
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <%= render "form", seed_source: @seed_source %>
+    </div>
+  </div>
+<% end %>

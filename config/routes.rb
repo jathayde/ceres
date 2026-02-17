@@ -15,7 +15,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :seed_sources, only: [ :index ]
+  resources :seed_sources, except: :show
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
 
   root "home#index"

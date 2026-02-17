@@ -8,6 +8,9 @@
 - Turbo Frames use `turbo_frame_tag model_instance` for inline editing patterns
 - Request specs go in `spec/requests/` and use `type: :request`
 - Flash messages (notice/alert) rendered in application layout
+- Non-nested CRUD controllers follow same pattern as PlantTypesController (before_action, set_*, params permit, deletable? guard)
+- `default_scope { order(:name) }` for alphabetically-sorted resources (vs `:position` for manually ordered ones)
+- `active_purchases_count` method on SeedSource for counting non-used-up purchases
 ---
 
 ## 2026-02-16 - US-002
@@ -66,4 +69,29 @@
   - Use `turbo_frame_tag model_instance` (passing the model directly) for automatic DOM IDs
   - `button_to` with `method: :delete` needs `form: { data: { turbo_confirm: "..." } }` for confirmation dialogs
   - Rack deprecation: `:unprocessable_entity` is deprecated in favor of `:unprocessable_content` in newer Rack versions
+---
+
+## 2026-02-16 - US-013
+- Implemented full CRUD for Seed Sources (list, create, edit, delete)
+- Updated SeedSource model: changed `dependent: :destroy` to `dependent: :restrict_with_error`, added `deletable?` method, added `active_purchases_count` method, added `default_scope { order(:name) }` for alphabetical sorting
+- Expanded routes from `only: [:index]` to `except: :show` for full CRUD
+- Created SeedSourcesController with all CRUD actions following existing pattern
+- Created views: index (table with name, website link, active purchases count, notes, actions), _form (name required, URL, notes), new, edit (with turbo_frame_tag)
+- Index shows clickable link to supplier website (opens in new tab)
+- Delete only available when `deletable?` (no associated purchases), with confirmation dialog
+- 160 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - app/models/seed_source.rb (restrict_with_error, deletable?, active_purchases_count, default_scope)
+  - app/controllers/seed_sources_controller.rb (full CRUD)
+  - app/views/seed_sources/index.html.erb (updated with full table)
+  - app/views/seed_sources/_form.html.erb (new)
+  - app/views/seed_sources/new.html.erb (new)
+  - app/views/seed_sources/edit.html.erb (new)
+  - config/routes.rb (expanded seed_sources routes)
+  - spec/models/seed_source_spec.rb (updated associations, added deletable?, active_purchases_count, default scope tests)
+  - spec/requests/seed_sources_spec.rb (new - full CRUD request specs)
+- **Learnings for future iterations:**
+  - Existing stub controller/views may already exist from US-011 layout work - check before creating from scratch
+  - `includes(:seed_purchases)` on index to avoid N+1 queries for active_purchases_count
+  - SeedSource uses `order(:name)` default scope unlike taxonomy models which use `order(:position)`
 ---
