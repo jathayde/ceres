@@ -1,0 +1,25 @@
+<%= render PageHeaderComponent.new(title: "Settings") %>
+
+<section class="bg-white rounded-lg border border-gray-200 p-6">
+  <h2 class="text-lg font-semibold text-gray-900">Growing Guides</h2>
+  <p class="mt-1 text-sm text-gray-500">
+    Research AI-generated growing guides for all categories and subcategories that don't have one yet.
+  </p>
+
+  <% if @total_missing > 0 %>
+    <p class="mt-3 text-sm text-gray-700">
+      <strong><%= @total_missing %></strong> <%= "category".pluralize(@total_missing) %> missing guides
+      (<%= @categories_missing_guides %> <%= "category".pluralize(@categories_missing_guides) %>,
+      <%= @subcategories_missing_guides %> <%= "subcategory".pluralize(@subcategories_missing_guides) %>).
+    </p>
+
+    <%= button_to "Research All Growing Guides",
+          admin_research_all_growing_guides_path,
+          method: :post,
+          class: "mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors" %>
+  <% else %>
+    <p class="mt-3 text-sm text-green-700 font-medium">
+      All categories and subcategories have growing guides.
+    </p>
+  <% end %>
+</section>

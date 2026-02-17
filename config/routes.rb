@@ -46,6 +46,9 @@ Rails.application.routes.draw do
     end
   end
   post "seed_sources/inline_create", to: "seed_sources#inline_create"
+  get "admin", to: "admin#index", as: :admin
+  post "admin/research_all_growing_guides", to: "admin#research_all_growing_guides", as: :admin_research_all_growing_guides
+
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
   patch "viability_audit/bulk_mark_used_up", to: "viability_audit#bulk_mark_used_up", as: :viability_audit_bulk_mark_used_up
   patch "viability_audit/mark_as_used_up/:id", to: "viability_audit#mark_as_used_up", as: :viability_audit_mark_as_used_up
