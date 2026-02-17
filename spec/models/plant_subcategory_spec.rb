@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe PlantSubcategory, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:plant_category) }
-    it { is_expected.to have_many(:plants).dependent(:destroy) }
+    it { is_expected.to have_many(:plants).dependent(:restrict_with_error) }
   end
 
   describe "validations" do
@@ -21,6 +21,19 @@ RSpec.describe PlantSubcategory, type: :model do
       second = create(:plant_subcategory, plant_category: plant_category, position: 2)
 
       expect(PlantSubcategory.where(plant_category: plant_category).to_a).to eq([ first, second, third ])
+    end
+  end
+
+  describe "#deletable?" do
+    it "returns true when there are no plants" do
+      subcategory = create(:plant_subcategory)
+      expect(subcategory.deletable?).to be true
+    end
+
+    it "returns false when there are plants" do
+      subcategory = create(:plant_subcategory)
+      create(:plant, plant_category: subcategory.plant_category, plant_subcategory: subcategory)
+      expect(subcategory.deletable?).to be false
     end
   end
 

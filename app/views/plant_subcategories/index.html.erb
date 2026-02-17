@@ -1,0 +1,52 @@
+<%= render PageHeaderComponent.new(title: @plant_category.name, subtitle: "Subcategories within #{@plant_category.name}") do |component| %>
+  <% component.with_actions do %>
+    <%= link_to "New Subcategory", new_plant_type_plant_category_plant_subcategory_path(@plant_type, @plant_category), class: "inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors" %>
+  <% end %>
+<% end %>
+
+<nav class="mb-6 text-sm text-gray-500">
+  <%= link_to "Plant Types", plant_types_path, class: "text-green-600 hover:text-green-800" %>
+  <span class="mx-1">/</span>
+  <%= link_to @plant_type.name, plant_type_plant_categories_path(@plant_type), class: "text-green-600 hover:text-green-800" %>
+  <span class="mx-1">/</span>
+  <span class="text-gray-900"><%= @plant_category.name %></span>
+</nav>
+
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plants</th>
+        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @plant_subcategories.each do |subcategory| %>
+        <%= turbo_frame_tag subcategory do %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm text-gray-500"><%= subcategory.position %></td>
+            <td class="px-6 py-4 text-sm font-medium text-gray-900"><%= subcategory.name %></td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= truncate(subcategory.description, length: 60) %></td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= subcategory.plants.size %></td>
+            <td class="px-6 py-4 text-sm text-right space-x-2">
+              <%= link_to "Edit", edit_plant_type_plant_category_plant_subcategory_path(@plant_type, @plant_category, subcategory), class: "text-green-600 hover:text-green-800" %>
+              <% if subcategory.deletable? %>
+                <%= button_to "Delete", plant_type_plant_category_plant_subcategory_path(@plant_type, @plant_category, subcategory), method: :delete,
+                  class: "text-red-600 hover:text-red-800",
+                  form: { data: { turbo_confirm: "Are you sure you want to delete #{subcategory.name}?" } } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+      <% if @plant_subcategories.empty? %>
+        <tr>
+          <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No subcategories yet. Create one to get started.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

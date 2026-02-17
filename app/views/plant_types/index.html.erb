@@ -1,0 +1,46 @@
+<%= render PageHeaderComponent.new(title: "Plant Taxonomy", subtitle: "Manage plant types, categories, and subcategories") do |component| %>
+  <% component.with_actions do %>
+    <%= link_to "New Plant Type", new_plant_type_path, class: "inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors" %>
+  <% end %>
+<% end %>
+
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</th>
+        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @plant_types.each do |plant_type| %>
+        <%= turbo_frame_tag plant_type do %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm text-gray-500"><%= plant_type.position %></td>
+            <td class="px-6 py-4 text-sm font-medium text-gray-900"><%= plant_type.name %></td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= truncate(plant_type.description, length: 60) %></td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              <%= link_to pluralize(plant_type.plant_categories.size, "category"), plant_type_plant_categories_path(plant_type), class: "text-green-600 hover:text-green-800 hover:underline" %>
+            </td>
+            <td class="px-6 py-4 text-sm text-right space-x-2">
+              <%= link_to "Edit", edit_plant_type_path(plant_type), class: "text-green-600 hover:text-green-800" %>
+              <% if plant_type.deletable? %>
+                <%= button_to "Delete", plant_type_path(plant_type), method: :delete,
+                  class: "text-red-600 hover:text-red-800",
+                  form: { data: { turbo_confirm: "Are you sure you want to delete #{plant_type.name}?" } } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+      <% if @plant_types.empty? %>
+        <tr>
+          <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No plant types yet. Create one to get started.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

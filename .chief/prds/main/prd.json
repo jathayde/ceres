@@ -196,7 +196,8 @@
         "Uses Turbo Frames for inline editing without full page reloads"
       ],
       "priority": 12,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-013",

@@ -1,0 +1,9 @@
+<%= turbo_frame_tag @plant_type do %>
+  <%= render PageHeaderComponent.new(title: "Edit Plant Type") %>
+
+  <div class="max-w-2xl">
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <%= render "form", plant_type: @plant_type %>
+    </div>
+  </div>
+<% end %>

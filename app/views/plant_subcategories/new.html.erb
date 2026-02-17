@@ -1,0 +1,17 @@
+<%= render PageHeaderComponent.new(title: "New Subcategory for #{@plant_category.name}") %>
+
+<nav class="mb-6 text-sm text-gray-500">
+  <%= link_to "Plant Types", plant_types_path, class: "text-green-600 hover:text-green-800" %>
+  <span class="mx-1">/</span>
+  <%= link_to @plant_type.name, plant_type_plant_categories_path(@plant_type), class: "text-green-600 hover:text-green-800" %>
+  <span class="mx-1">/</span>
+  <%= link_to @plant_category.name, plant_type_plant_category_plant_subcategories_path(@plant_type, @plant_category), class: "text-green-600 hover:text-green-800" %>
+  <span class="mx-1">/</span>
+  <span class="text-gray-900">New Subcategory</span>
+</nav>
+
+<div class="max-w-2xl">
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+    <%= render "form", plant_subcategory: @plant_subcategory %>
+  </div>
+</div>

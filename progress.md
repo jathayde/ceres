@@ -3,6 +3,11 @@
 - Models use `default_scope { order(:position) }` for position-ordered records
 - Factory sequences for unique fields: `sequence(:name) { |n| "Plant Type #{n}" }`
 - Database constraints (null: false, unique index) should mirror model validations
+- Use `dependent: :restrict_with_error` on associations where deletion should be prevented when children exist
+- Add `deletable?` method to models that need deletion protection checks
+- Turbo Frames use `turbo_frame_tag model_instance` for inline editing patterns
+- Request specs go in `spec/requests/` and use `type: :request`
+- Flash messages (notice/alert) rendered in application layout
 ---
 
 ## 2026-02-16 - US-002
@@ -23,4 +28,42 @@
   - spec/support/shoulda_matchers.rb already set up
   - FactoryBot syntax methods already included in rails_helper.rb
   - Use `bin/rails generate model` to scaffold model, migration, spec, and factory together
+---
+
+## 2026-02-16 - US-012
+- Implemented full CRUD for PlantType, PlantCategory (nested under PlantType), and PlantSubcategory (nested under PlantCategory)
+- Changed `dependent: :destroy` to `dependent: :restrict_with_error` on all three models to prevent deletion when children exist
+- Added `deletable?` method to all three models for checking deletion safety
+- Added `has_many :plants, through: :plant_categories` to PlantType for transitive access
+- Created nested routes: `plant_types > plant_categories > plant_subcategories`
+- Turbo Frames wrap table rows and edit forms for inline editing without full page reloads
+- Breadcrumb navigation on all nested views
+- Position field for sort order on all forms
+- PlantCategory form includes latin_genus, latin_species, expected_viability_years
+- Flash messages (notice/alert) added to application layout
+- 141 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - config/routes.rb (added nested routes)
+  - app/models/plant_type.rb (restrict_with_error, deletable?, through association)
+  - app/models/plant_category.rb (restrict_with_error, deletable?)
+  - app/models/plant_subcategory.rb (restrict_with_error, deletable?)
+  - app/controllers/plant_types_controller.rb (new)
+  - app/controllers/plant_categories_controller.rb (new)
+  - app/controllers/plant_subcategories_controller.rb (new)
+  - app/views/plant_types/ (index, new, edit, _form)
+  - app/views/plant_categories/ (index, new, edit, _form)
+  - app/views/plant_subcategories/ (index, new, edit, _form)
+  - app/views/layouts/application.html.erb (flash messages)
+  - spec/models/plant_type_spec.rb (updated associations, added deletable? tests)
+  - spec/models/plant_category_spec.rb (updated associations, added deletable? tests)
+  - spec/models/plant_subcategory_spec.rb (updated associations, added deletable? tests)
+  - spec/requests/plant_types_spec.rb (new)
+  - spec/requests/plant_categories_spec.rb (new)
+  - spec/requests/plant_subcategories_spec.rb (new)
+- **Learnings for future iterations:**
+  - Nested routes create long helper method names like `plant_type_plant_category_plant_subcategories_path`
+  - `dependent: :restrict_with_error` adds errors to the model instead of raising an exception, works well with `deletable?` guard
+  - Use `turbo_frame_tag model_instance` (passing the model directly) for automatic DOM IDs
+  - `button_to` with `method: :delete` needs `form: { data: { turbo_confirm: "..." } }` for confirmation dialogs
+  - Rack deprecation: `:unprocessable_entity` is deprecated in favor of `:unprocessable_content` in newer Rack versions
 ---

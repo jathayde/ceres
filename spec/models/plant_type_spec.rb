@@ -2,7 +2,8 @@ require "rails_helper"
 
 RSpec.describe PlantType, type: :model do
   describe "associations" do
-    it { is_expected.to have_many(:plant_categories).dependent(:destroy) }
+    it { is_expected.to have_many(:plant_categories).dependent(:restrict_with_error) }
+    it { is_expected.to have_many(:plants).through(:plant_categories) }
   end
 
   describe "validations" do
@@ -19,6 +20,19 @@ RSpec.describe PlantType, type: :model do
       second = PlantType.create!(name: "Second", position: 2)
 
       expect(PlantType.all.to_a).to eq([ first, second, third ])
+    end
+  end
+
+  describe "#deletable?" do
+    it "returns true when there are no categories" do
+      plant_type = create(:plant_type)
+      expect(plant_type.deletable?).to be true
+    end
+
+    it "returns false when there are categories" do
+      plant_type = create(:plant_type)
+      create(:plant_category, plant_type: plant_type)
+      expect(plant_type.deletable?).to be false
     end
   end
 

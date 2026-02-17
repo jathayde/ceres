@@ -1,0 +1,31 @@
+<%= form_with(model: [@plant_type, @plant_category, plant_subcategory], class: "space-y-4") do |form| %>
+  <% if plant_subcategory.errors.any? %>
+    <div class="rounded-md bg-red-50 p-4">
+      <ul class="list-disc list-inside text-sm text-red-800">
+        <% plant_subcategory.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, class: "block text-sm font-medium text-gray-700" %>
+    <%= form.text_field :name, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm", required: true %>
+  </div>
+
+  <div>
+    <%= form.label :description, class: "block text-sm font-medium text-gray-700" %>
+    <%= form.text_area :description, rows: 3, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+  </div>
+
+  <div>
+    <%= form.label :position, class: "block text-sm font-medium text-gray-700" %>
+    <%= form.number_field :position, class: "mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+  </div>
+
+  <div class="flex items-center gap-3 pt-2">
+    <%= form.submit class: "inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors cursor-pointer" %>
+    <%= link_to "Cancel", plant_type_plant_category_plant_subcategories_path(@plant_type, @plant_category), class: "text-sm text-gray-500 hover:text-gray-700" %>
+  </div>
+<% end %>
