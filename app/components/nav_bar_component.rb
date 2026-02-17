@@ -9,7 +9,8 @@ class NavBarComponent < ViewComponent::Base
     [
       NavItem.new(label: "Inventory", path: root_path, active: @current_path == root_path || @current_path.start_with?(inventory_browse_path)),
       NavItem.new(label: "Seed Sources", path: seed_sources_path, active: @current_path.start_with?(seed_sources_path)),
-      NavItem.new(label: "Viability Audit", path: viability_audit_path, active: @current_path.start_with?(viability_audit_path))
+      NavItem.new(label: "Viability Audit", path: viability_audit_path, active: @current_path.start_with?(viability_audit_path)),
+      NavItem.new(label: "Import", path: new_spreadsheet_import_path, active: @current_path.start_with?(spreadsheet_imports_path))
     ]
   end
 
@@ -29,5 +30,13 @@ class NavBarComponent < ViewComponent::Base
 
   def viability_audit_path
     helpers.viability_audit_path
+  end
+
+  def new_spreadsheet_import_path
+    helpers.new_spreadsheet_import_path
+  end
+
+  def spreadsheet_imports_path
+    helpers.spreadsheet_imports_path
   end
 end

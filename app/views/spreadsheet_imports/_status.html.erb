@@ -1,0 +1,50 @@
+<div class="bg-white rounded-lg border border-gray-200 p-4">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <% case import.status %>
+      <% when "pending" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          Pending
+        </span>
+        <span class="text-sm text-gray-600">Waiting to start...</span>
+      <% when "parsing" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          Parsing
+        </span>
+        <span class="text-sm text-gray-600">
+          Parsed <%= import.parsed_rows %> of <%= import.total_rows %> rows
+          (<%= import.parsed_percentage %>%)
+        </span>
+      <% when "parsed" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Parsed
+        </span>
+        <span class="text-sm text-gray-600">
+          <%= import.parsed_rows %> rows parsed across <%= import.sheet_names.size %> sheets
+        </span>
+      <% when "failed" %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Failed
+        </span>
+        <span class="text-sm text-red-600"><%= import.error_message %></span>
+      <% end %>
+    </div>
+
+    <% if import.parsed? %>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-gray-500">
+          Sheets: <%= import.sheet_names.join(", ") %>
+        </span>
+      </div>
+    <% end %>
+  </div>
+
+  <% if import.parsing? && import.total_rows > 0 %>
+    <div class="mt-3">
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+             style="width: <%= import.parsed_percentage %>%"></div>
+      </div>
+    </div>
+  <% end %>
+</div>

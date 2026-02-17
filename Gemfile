@@ -51,6 +51,10 @@ gem "view_component"
 # Anthropic Ruby SDK for AI features [https://github.com/anthropics/anthropic-sdk-ruby]
 gem "anthropic"
 
+# Excel spreadsheet parsing [https://github.com/roo-rb/roo]
+gem "roo", "~> 2.10"
+gem "csv"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -78,6 +82,9 @@ group :development, :test do
 
   # Capybara for ViewComponent testing [https://github.com/teamcapybara/capybara]
   gem "capybara"
+
+  # Excel spreadsheet generation for test fixtures [https://github.com/caxlsx/caxlsx]
+  gem "caxlsx"
 end
 
 group :development do
