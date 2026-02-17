@@ -14,6 +14,24 @@ RSpec.describe "PlantCategories", type: :request do
       get plant_type_plant_categories_path(plant_type)
       expect(response.body).to include("Bean")
     end
+
+    it "shows AI badge for AI-populated viability data" do
+      create(:plant_category, plant_type: plant_type, name: "Bean", expected_viability_years: 4, expected_viability_years_ai_populated: true)
+      get plant_type_plant_categories_path(plant_type)
+      expect(response.body).to include("AI")
+    end
+
+    it "shows Research button for categories without viability data" do
+      create(:plant_category, plant_type: plant_type, name: "New Category", expected_viability_years: nil)
+      get plant_type_plant_categories_path(plant_type)
+      expect(response.body).to include("Research")
+    end
+
+    it "does not show Research button for categories with viability data" do
+      create(:plant_category, plant_type: plant_type, name: "Bean", expected_viability_years: 4)
+      get plant_type_plant_categories_path(plant_type)
+      expect(response.body).not_to include("research_viability")
+    end
   end
 
   describe "GET /plant_types/:plant_type_id/plant_categories/new" do
@@ -68,6 +86,26 @@ RSpec.describe "PlantCategories", type: :request do
       }
       expect(category.reload.name).to eq("Old Name")
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
+  describe "POST /plant_types/:plant_type_id/plant_categories/:id/research_viability" do
+    let(:category) { create(:plant_category, plant_type: plant_type, expected_viability_years: nil) }
+
+    it "enqueues a ViabilityDataEnrichmentJob" do
+      expect {
+        post research_viability_plant_type_plant_category_path(plant_type, category)
+      }.to have_enqueued_job(ViabilityDataEnrichmentJob).with(category.id)
+    end
+
+    it "redirects to the categories index" do
+      post research_viability_plant_type_plant_category_path(plant_type, category)
+      expect(response).to redirect_to(plant_type_plant_categories_path(plant_type))
+    end
+
+    it "sets a notice flash message" do
+      post research_viability_plant_type_plant_category_path(plant_type, category)
+      expect(flash[:notice]).to include("Viability research started")
     end
   end
 

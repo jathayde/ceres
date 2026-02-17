@@ -1,6 +1,6 @@
 class PlantCategoriesController < ApplicationController
   before_action :set_plant_type
-  before_action :set_plant_category, only: %i[edit update destroy]
+  before_action :set_plant_category, only: %i[edit update destroy research_viability]
 
   def index
     @plant_categories = @plant_type.plant_categories.includes(:plants, :plant_subcategories)
@@ -29,6 +29,11 @@ class PlantCategoriesController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def research_viability
+    ViabilityDataEnrichmentJob.perform_later(@plant_category.id)
+    redirect_to plant_type_plant_categories_path(@plant_type), notice: "Viability research started for #{@plant_category.name}. Results will appear shortly."
   end
 
   def destroy

@@ -11,6 +11,9 @@ Rails.application.routes.draw do
 
   resources :plant_types, except: :show do
     resources :plant_categories, except: :show do
+      member do
+        post :research_viability
+      end
       resources :plant_subcategories, except: :show
     end
   end
