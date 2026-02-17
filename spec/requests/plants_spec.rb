@@ -372,4 +372,27 @@ RSpec.describe "Plants", type: :request do
       expect(response.body).to include("turbo-cable-stream-source")
     end
   end
+
+  describe "GET /plants/:id (show) with AI latin name indicator" do
+    let!(:plant) { create(:plant, name: "Test Plant", plant_category: plant_category, latin_name: "Solanum lycopersicum") }
+
+    it "displays the AI badge when latin_name is AI-populated" do
+      plant.update!(latin_name_ai_populated: true)
+      get plant_path(plant)
+      expect(response.body).to include("AI")
+      expect(response.body).to include("AI-suggested")
+    end
+
+    it "does not display the AI badge when latin_name is not AI-populated" do
+      plant.update!(latin_name_ai_populated: false)
+      get plant_path(plant)
+      expect(response.body).to include("Solanum lycopersicum")
+      expect(response.body).not_to include("AI-suggested")
+    end
+
+    it "subscribes to Turbo Stream for latin name updates" do
+      get plant_path(plant)
+      expect(response.body).to include("turbo-cable-stream-source")
+    end
+  end
 end

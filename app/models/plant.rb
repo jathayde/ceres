@@ -16,6 +16,8 @@ class Plant < ApplicationRecord
   validates :name, presence: true
   validates :life_cycle, presence: true
 
+  after_commit :enqueue_latin_name_lookup, on: :create, if: -> { latin_name.blank? }
+
   pg_search_scope :search,
     against: { name: "A", latin_name: "B", notes: "C" },
     associated_against: {
@@ -74,5 +76,11 @@ class Plant < ApplicationRecord
     return :expired if statuses.include?(:expired)
 
     :unknown
+  end
+
+  private
+
+  def enqueue_latin_name_lookup
+    LatinNameLookupJob.perform_later(id)
   end
 end

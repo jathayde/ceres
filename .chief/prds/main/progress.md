@@ -10,6 +10,8 @@
 - Root route: `home#index`
 - Project directory: `/Users/jathayde/Development/HomesteadTrack/ceres`
 - Rubocop requires spaces inside array brackets: `[ :a, :b ]` not `[:a, :b]`
+- Viability filtering uses raw SQL subqueries to avoid DISTINCT + ORDER BY conflicts in PostgreSQL
+- Filter params are preserved across search/navigation via hidden fields in search bar partial
 - Use `default_scope { order(:position) }` for position-ordered models
 - Uniqueness scoped validations: `validates :name, uniqueness: { scope: :parent_id }`
 - PostgreSQL array columns: `t.string :field, array: true, default: []`
@@ -242,4 +244,32 @@
   - `class_names` helper in ERB handles conditional Tailwind classes cleanly
   - Stimulus controllers auto-register when placed in `app/javascript/controllers/` — no manual registration needed
   - Fixed header with `fixed top-0 left-0 right-0 z-50` plus `pt-20` on main content for clearance
+---
+
+## 2026-02-16 - US-019
+- Implemented inventory quick filters: viability status (Viable/Needs Testing/Expired), Heirloom toggle, Seed Source dropdown
+- Added Plant model scopes: `.heirloom`, `.with_seed_source(id)`, `.with_viability_status(status)`
+- Viability filter uses raw SQL subquery to avoid DISTINCT + ORDER BY conflicts with PostgreSQL
+- Filters combine with each other (AND logic), with search, and with taxonomy navigation
+- Active filters visually indicated with filled/highlighted button styles; clear all filters button when any filter active
+- Search bar preserves filter params as hidden fields so filters persist across search input changes
+- Created Stimulus `inventory-filters` controller for seed source dropdown Turbo Frame navigation
+- Filters partial (`_filters.html.erb`) renders on both index and browse views
+- Added 21 new specs: 10 model specs for new scopes, 11 request specs for filter behavior
+- Files changed:
+  - `app/models/plant.rb` (updated — added heirloom, with_seed_source, with_viability_status scopes)
+  - `app/controllers/inventory_controller.rb` (updated — added load_filters, apply filters in load_plants)
+  - `app/views/inventory/_filters.html.erb` (new — filter buttons and seed source dropdown)
+  - `app/views/inventory/_search_bar.html.erb` (updated — hidden fields for filter params)
+  - `app/views/inventory/index.html.erb` (updated — renders filters partial)
+  - `app/views/inventory/browse.html.erb` (updated — renders filters partial)
+  - `app/javascript/controllers/inventory_filters_controller.js` (new — Stimulus controller for source dropdown)
+  - `spec/models/plant_spec.rb` (updated — added scope specs)
+  - `spec/requests/inventory_spec.rb` (updated — added filter specs)
+- **Learnings for future iterations:**
+  - PostgreSQL `SELECT DISTINCT` requires ORDER BY columns to be in the SELECT list — use subqueries (`WHERE id IN (SELECT ...)`) instead of `.distinct` when ordering by joined table columns
+  - Raw SQL subqueries with aliased tables (`sp`, `p`, `pc`) avoid conflicts when pg_search also joins the same tables
+  - `request.query_parameters.except("key")` in views is useful for toggling filters while preserving other params
+  - Filter state must be propagated in three ways: URL params (links), hidden fields (search form), and Stimulus (select dropdown)
+  - Turbo Frame `src` assignment triggers frame navigation without a full page reload
 ---

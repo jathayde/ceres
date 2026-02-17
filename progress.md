@@ -319,3 +319,34 @@
   - `GrowingGuide.water_needs` (class method) returns the enum mapping hash — same name as instance method, works fine
   - `broadcast_replace_to` from jobs renders partial with URL helpers available via ApplicationController context
 ---
+
+## 2026-02-17 - US-022
+- Implemented AI Latin Name Lookup: background job auto-suggests latin names for plants created without one
+- Created `LatinNameLookupJob` following same pattern as `GrowingGuideResearchJob`:
+  - Calls Anthropic Claude API with plant name, category, and existing taxonomy context
+  - Parses JSON response for plant latin_name and category latin_genus/latin_species
+  - Saves latin_name to plant with `latin_name_ai_populated: true` flag
+  - Also fills in missing `latin_genus`/`latin_species` on parent PlantCategory (with AI-populated flags)
+  - Broadcasts Turbo Stream update to replace latin name display on plant detail page
+- Added `after_commit :enqueue_latin_name_lookup, on: :create` callback to Plant model (only when latin_name blank)
+- Created migration adding `latin_name_ai_populated` (boolean) to plants, `latin_genus_ai_populated` and `latin_species_ai_populated` (boolean) to plant_categories
+- Created `_latin_name.html.erb` partial with AI badge indicator ("AI" pill with "AI-suggested" tooltip)
+- Updated plant show page: replaced subtitle with latin_name partial, added Turbo Stream subscription for live updates
+- User can override AI-suggested values at any time via the edit form
+- 353 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - db/migrate/20260217012054_add_latin_name_ai_fields_to_plants.rb (new - adds AI tracking boolean columns)
+  - app/jobs/latin_name_lookup_job.rb (new - background job for AI latin name lookup)
+  - app/models/plant.rb (added after_commit callback, private enqueue_latin_name_lookup method)
+  - app/views/plants/_latin_name.html.erb (new - latin name partial with AI badge)
+  - app/views/plants/show.html.erb (replaced subtitle with partial, added turbo_stream_from for latin name)
+  - spec/jobs/latin_name_lookup_job_spec.rb (new - 20 specs covering AI call, parsing, saving, broadcasting, edge cases)
+  - spec/models/plant_spec.rb (added 3 specs for latin name lookup callback)
+  - spec/requests/plants_spec.rb (added 3 specs for AI latin name indicator display)
+- **Learnings for future iterations:**
+  - `after_commit` (not `after_create`) is needed when you want to ensure the record is fully persisted before enqueuing a job
+  - When testing job enqueueing specs for a job that's also triggered by model callbacks, use a factory variant that skips the callback condition (e.g., provide latin_name so callback is skipped)
+  - AI-populated boolean flags (e.g., `latin_name_ai_populated`) are a simple pattern for indicating AI-suggested values without adding complexity
+  - Multiple Turbo Stream subscriptions can coexist on the same page (e.g., one for growing guide, one for latin name)
+  - Conditional callback: `if: -> { latin_name.blank? }` on `after_commit` prevents unnecessary job enqueuing
+---

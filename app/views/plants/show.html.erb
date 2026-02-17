@@ -8,7 +8,9 @@
   <% end %>
 </div>
 
-<%= render PageHeaderComponent.new(title: @plant.name, subtitle: @plant.latin_name) do |component| %>
+<%= turbo_stream_from "plant_#{@plant.id}_latin_name" %>
+
+<%= render PageHeaderComponent.new(title: @plant.name) do |component| %>
   <% component.with_actions do %>
     <%= link_to new_seed_purchase_path(plant_id: @plant.id), class: "inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors" do %>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -20,6 +22,10 @@
     <% end %>
   <% end %>
 <% end %>
+
+<div class="-mt-6 mb-6 text-sm">
+  <%= render "plants/latin_name", plant: @plant %>
+</div>
 
 <%# Breadcrumb taxonomy context %>
 <div class="mb-6 text-sm text-gray-500">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_235121) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_012054) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,7 +42,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_235121) do
     t.text "description"
     t.integer "expected_viability_years"
     t.string "latin_genus"
+    t.boolean "latin_genus_ai_populated", default: false, null: false
     t.string "latin_species"
+    t.boolean "latin_species_ai_populated", default: false, null: false
     t.string "name", null: false
     t.bigint "plant_type_id", null: false
     t.integer "position"
@@ -78,6 +80,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_235121) do
     t.integer "expected_viability_years"
     t.boolean "heirloom", default: false, null: false
     t.string "latin_name"
+    t.boolean "latin_name_ai_populated", default: false, null: false
     t.integer "life_cycle", null: false
     t.string "name", null: false
     t.text "notes"

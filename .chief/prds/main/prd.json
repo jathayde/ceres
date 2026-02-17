@@ -362,7 +362,8 @@
         "User can override the AI-suggested value at any time"
       ],
       "priority": 22,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-023",

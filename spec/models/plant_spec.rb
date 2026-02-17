@@ -209,6 +209,26 @@ RSpec.describe Plant, type: :model do
     end
   end
 
+  describe "latin name lookup callback" do
+    it "enqueues LatinNameLookupJob when created without latin_name" do
+      expect {
+        create(:plant, latin_name: nil)
+      }.to have_enqueued_job(LatinNameLookupJob)
+    end
+
+    it "does not enqueue LatinNameLookupJob when created with latin_name" do
+      expect {
+        create(:plant, latin_name: "Solanum lycopersicum")
+      }.not_to have_enqueued_job(LatinNameLookupJob)
+    end
+
+    it "does not enqueue LatinNameLookupJob when created with blank latin_name" do
+      expect {
+        create(:plant, latin_name: "")
+      }.to have_enqueued_job(LatinNameLookupJob)
+    end
+  end
+
   describe "factory" do
     it "creates a valid plant" do
       plant = build(:plant)
