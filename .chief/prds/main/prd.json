@@ -229,7 +229,8 @@
         "Uses Turbo for dynamic form updates (cascading dropdowns)"
       ],
       "priority": 14,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-015",

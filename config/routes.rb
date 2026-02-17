@@ -15,6 +15,10 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :plants, except: :show
+  get "plants/categories_for_type", to: "plants#categories_for_type"
+  get "plants/subcategories_for_category", to: "plants#subcategories_for_category"
+
   resources :seed_sources, except: :show
   get "viability_audit", to: "viability_audit#index", as: :viability_audit
 

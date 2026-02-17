@@ -1,0 +1,60 @@
+<%= render PageHeaderComponent.new(title: "Plants", subtitle: "Manage your plant varieties") do |component| %>
+  <% component.with_actions do %>
+    <%= link_to "New Plant", new_plant_path, class: "inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors" %>
+  <% end %>
+<% end %>
+
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Life Cycle</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heirloom</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchases</th>
+        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @plants.each do |plant| %>
+        <%= turbo_frame_tag plant do %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+              <%= plant.name %>
+              <% if plant.latin_name.present? %>
+                <span class="text-gray-500 italic ml-1"><%= plant.latin_name %></span>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              <%= plant.plant_category.name %>
+              <% if plant.plant_subcategory.present? %>
+                <span class="text-gray-400">&rsaquo;</span> <%= plant.plant_subcategory.name %>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= plant.life_cycle.humanize %></td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              <% if plant.heirloom? %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Heirloom</span>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500"><%= plant.seed_purchases.size %></td>
+            <td class="px-6 py-4 text-sm text-right space-x-2">
+              <%= link_to "Edit", edit_plant_path(plant), class: "text-green-600 hover:text-green-800" %>
+              <% if plant.deletable? %>
+                <%= button_to "Delete", plant_path(plant), method: :delete,
+                  class: "text-red-600 hover:text-red-800",
+                  form: { data: { turbo_confirm: "Are you sure you want to delete #{plant.name}?" } } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+      <% if @plants.empty? %>
+        <tr>
+          <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">No plants yet. Create one to get started.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

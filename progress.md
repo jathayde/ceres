@@ -11,6 +11,9 @@
 - Non-nested CRUD controllers follow same pattern as PlantTypesController (before_action, set_*, params permit, deletable? guard)
 - `default_scope { order(:name) }` for alphabetically-sorted resources (vs `:position` for manually ordered ones)
 - `active_purchases_count` method on SeedSource for counting non-used-up purchases
+- Cascading dropdowns via Stimulus controller + JSON endpoints (e.g., `categories_for_type`, `subcategories_for_category`)
+- Plant form uses `plant_type_id` as a virtual selector (not persisted on Plant), driving category/subcategory cascades
+- Use `hidden_field_tag` with empty value for array params (like `planting_seasons[]`) so empty arrays submit correctly
 ---
 
 ## 2026-02-16 - US-002
@@ -94,4 +97,34 @@
   - Existing stub controller/views may already exist from US-011 layout work - check before creating from scratch
   - `includes(:seed_purchases)` on index to avoid N+1 queries for active_purchases_count
   - SeedSource uses `order(:name)` default scope unlike taxonomy models which use `order(:position)`
+---
+
+## 2026-02-16 - US-014
+- Implemented full CRUD for Plant (Variety) management
+- Updated Plant model: changed `dependent: :destroy` to `dependent: :restrict_with_error` for seed_purchases, added `deletable?` method, added `PLANTING_SEASON_OPTIONS` constant
+- Created PlantsController with all CRUD actions plus `categories_for_type` and `subcategories_for_category` JSON endpoints for cascading dropdowns
+- Created views: index (table with name, latin name, category, life cycle, heirloom badge, purchase count, actions), _form (cascading type > category > subcategory dropdowns, all plant fields including planting seasons checkboxes), new, edit
+- Created Stimulus `cascading_select_controller.js` for dynamic form updates on type/category change
+- Plant type selector drives category dropdown; category selector drives subcategory dropdown
+- Subcategory wrapper hidden when category has no subcategories
+- Form includes: heirloom checkbox, days to harvest range, winter hardiness, planting seasons multi-select, expected viability years override, notes
+- Delete only available when `deletable?` (no associated seed purchases), with confirmation dialog
+- 185 total specs pass, 0 failures; RuboCop clean
+- Files changed:
+  - app/models/plant.rb (restrict_with_error, deletable?, PLANTING_SEASON_OPTIONS)
+  - app/controllers/plants_controller.rb (new - full CRUD + JSON endpoints)
+  - app/views/plants/index.html.erb (new)
+  - app/views/plants/_form.html.erb (new - cascading dropdowns)
+  - app/views/plants/new.html.erb (new)
+  - app/views/plants/edit.html.erb (new)
+  - app/javascript/controllers/cascading_select_controller.js (new - Stimulus controller)
+  - config/routes.rb (added plants routes + cascading dropdown endpoints)
+  - spec/models/plant_spec.rb (updated dependent association, added deletable? tests)
+  - spec/requests/plants_spec.rb (new - full CRUD + JSON endpoint request specs)
+- **Learnings for future iterations:**
+  - Cascading dropdowns use Stimulus controller with JSON endpoints rather than Turbo Frames for simpler implementation
+  - Plant type is a virtual selector (not a Plant attribute) used only to drive category filtering
+  - `load_form_options` method in controller pre-populates dropdown data for edit forms based on existing associations
+  - Array fields like `planting_seasons` need a hidden field with empty value to ensure empty arrays submit correctly
+  - Use `references(:plant_category)` with `order("plant_categories.name")` when ordering by an association's column in `includes`
 ---

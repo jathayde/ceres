@@ -5,7 +5,7 @@ RSpec.describe Plant, type: :model do
     it { is_expected.to belong_to(:plant_category) }
     it { is_expected.to belong_to(:plant_subcategory).optional }
     it { is_expected.to have_one(:growing_guide).dependent(:destroy) }
-    it { is_expected.to have_many(:seed_purchases).dependent(:destroy) }
+    it { is_expected.to have_many(:seed_purchases).dependent(:restrict_with_error) }
   end
 
   describe "validations" do
@@ -42,6 +42,19 @@ RSpec.describe Plant, type: :model do
     it "defaults heirloom to false" do
       plant = Plant.new
       expect(plant.heirloom).to be false
+    end
+  end
+
+  describe "#deletable?" do
+    it "returns true when plant has no seed purchases" do
+      plant = create(:plant)
+      expect(plant.deletable?).to be true
+    end
+
+    it "returns false when plant has seed purchases" do
+      plant = create(:plant)
+      create(:seed_purchase, plant: plant)
+      expect(plant.deletable?).to be false
     end
   end
 

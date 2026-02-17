@@ -1,0 +1,134 @@
+<%= form_with(model: plant, class: "space-y-4", data: {
+  controller: "cascading-select",
+  cascading_select_categories_url_value: plants_categories_for_type_path,
+  cascading_select_subcategories_url_value: plants_subcategories_for_category_path,
+  cascading_select_selected_category_value: plant.plant_category_id,
+  cascading_select_selected_subcategory_value: plant.plant_subcategory_id
+}) do |form| %>
+  <% if plant.errors.any? %>
+    <div class="rounded-md bg-red-50 p-4">
+      <ul class="list-disc list-inside text-sm text-red-800">
+        <% plant.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-gray-900 mb-3">Classification</legend>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label for="plant_type_selector" class="block text-sm font-medium text-gray-700">Plant Type</label>
+        <select id="plant_type_selector" name="plant_type_id"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+          data-cascading-select-target="plantType"
+          data-action="change->cascading-select#typeChanged">
+          <option value="">Select a type...</option>
+          <% @plant_types.each do |pt| %>
+            <option value="<%= pt.id %>" <%= "selected" if plant.plant_category&.plant_type_id == pt.id %>><%= pt.name %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <div>
+        <%= form.label :plant_category_id, "Category", class: "block text-sm font-medium text-gray-700" %>
+        <%= form.select :plant_category_id,
+          options_for_select(@plant_categories.map { |c| [c.name, c.id] }, plant.plant_category_id),
+          { include_blank: "Select a category...", required: true },
+          class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm",
+          data: { cascading_select_target: "category", action: "change->cascading-select#categoryChanged" } %>
+      </div>
+
+      <div data-cascading-select-target="subcategoryWrapper" class="<%= 'hidden' if @plant_subcategories.empty? %>">
+        <%= form.label :plant_subcategory_id, "Subcategory", class: "block text-sm font-medium text-gray-700" %>
+        <%= form.select :plant_subcategory_id,
+          options_for_select(@plant_subcategories.map { |s| [s.name, s.id] }, plant.plant_subcategory_id),
+          { include_blank: "None" },
+          class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm",
+          data: { cascading_select_target: "subcategory" } %>
+      </div>
+    </div>
+  </fieldset>
+
+  <div>
+    <%= form.label :name, class: "block text-sm font-medium text-gray-700" %>
+    <%= form.text_field :name, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm", required: true %>
+  </div>
+
+  <div>
+    <%= form.label :latin_name, class: "block text-sm font-medium text-gray-700" %>
+    <%= form.text_field :latin_name, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div>
+      <%= form.label :life_cycle, class: "block text-sm font-medium text-gray-700" %>
+      <%= form.select :life_cycle,
+        Plant.life_cycles.keys.map { |k| [k.humanize, k] },
+        { include_blank: "Select...", required: true },
+        class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+    </div>
+
+    <div>
+      <%= form.label :winter_hardy, "Winter Hardiness", class: "block text-sm font-medium text-gray-700" %>
+      <%= form.select :winter_hardy,
+        Plant.winter_hardies.keys.map { |k| [k.humanize, k] },
+        { include_blank: "Not specified" },
+        class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+    </div>
+
+    <div class="flex items-end pb-1">
+      <label class="flex items-center gap-2">
+        <%= form.check_box :heirloom, class: "rounded border-gray-300 text-green-600 focus:ring-green-500" %>
+        <span class="text-sm font-medium text-gray-700">Heirloom variety</span>
+      </label>
+    </div>
+  </div>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-gray-900 mb-3">Growing Details</legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <%= form.label :days_to_harvest_min, "Days to Harvest (Min)", class: "block text-sm font-medium text-gray-700" %>
+        <%= form.number_field :days_to_harvest_min, min: 1, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+      </div>
+
+      <div>
+        <%= form.label :days_to_harvest_max, "Days to Harvest (Max)", class: "block text-sm font-medium text-gray-700" %>
+        <%= form.number_field :days_to_harvest_max, min: 1, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-gray-900 mb-3">Planting Seasons</legend>
+    <div class="flex flex-wrap gap-4">
+      <% Plant::PLANTING_SEASON_OPTIONS.each do |season| %>
+        <label class="flex items-center gap-2">
+          <%= check_box_tag "plant[planting_seasons][]", season, plant.planting_seasons&.include?(season),
+            id: "plant_planting_seasons_#{season.downcase}",
+            class: "rounded border-gray-300 text-green-600 focus:ring-green-500" %>
+          <span class="text-sm text-gray-700"><%= season %></span>
+        </label>
+      <% end %>
+      <%= hidden_field_tag "plant[planting_seasons][]", "" %>
+    </div>
+  </fieldset>
+
+  <div>
+    <%= form.label :expected_viability_years, "Expected Viability Years (Override)", class: "block text-sm font-medium text-gray-700" %>
+    <p class="text-xs text-gray-500 mb-1">Leave blank to use the category default.</p>
+    <%= form.number_field :expected_viability_years, min: 1, class: "mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+  </div>
+
+  <div>
+    <%= form.label :notes, class: "block text-sm font-medium text-gray-700" %>
+    <%= form.text_area :notes, rows: 3, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm" %>
+  </div>
+
+  <div class="flex items-center gap-3 pt-2">
+    <%= form.submit class: "inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors cursor-pointer" %>
+    <%= link_to "Cancel", plants_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+  </div>
+<% end %>
