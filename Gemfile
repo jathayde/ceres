@@ -88,6 +88,7 @@ group :development, :test do
 end
 
 group :development do
+  gem "claude-on-rails"
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 end
