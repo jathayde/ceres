@@ -41,3 +41,6 @@
 .claude-on-rails/sessions/
 .claude-swarm/
 claude-swarm.log
+
+# Local database dumps
+/ceres_development_backup.sql
